@@ -1,8 +1,8 @@
 @echo off
 rem ---------------------------------------------------------------------------
-rem  PhoneDeck - conexión por cable USB con "adb reverse"
+rem  PhoneDeck - conexion por cable USB con "adb reverse"
 rem  Hace que http://localhost:8765 en el celular apunte al PhoneDeck de la PC.
-rem  Requisitos: "Depuración USB" activada en el celular y adb instalado.
+rem  Requisitos: "Depuracion USB" activada en el celular y adb instalado.
 rem ---------------------------------------------------------------------------
 setlocal
 set "PORT=8765"
