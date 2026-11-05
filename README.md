@@ -4,14 +4,14 @@ Dashboard personalizable para controlar una PC Windows desde un celular Android 
 (probado como objetivo: Xiaomi Redmi 5 Plus, Android 7/8, Chrome 60+). Sin instalar apps:
 el celular abre una página web servida por la PC, por cable USB (`adb reverse`) o WiFi.
 
-> 🚧 **En desarrollo.** Hito actual: **(a) servidor + multimedia + lanzador**.
-> La interfaz del celular llega en el hito (b).
+> 🚧 **En desarrollo.** Hitos completados: (a) servidor y (b) interfaz del celular.
 
 ## Estado por hitos
 
 - [x] (a) Servidor FastAPI, config con recarga en caliente, plugins `media`, `volume`,
       `launch`, `url`, `keys`, `macro`, `system`, seguridad (token, PIN, Host)
-- [ ] (b) UI del celular
+- [x] (b) UI del celular: páginas, grid táctil, widgets, PIN, pantalla completa,
+      pantalla siempre encendida, reconexión automática (Chrome 60+)
 - [ ] (c) Ahora suena + volumen + widgets en vivo
 - [ ] (d) Editor visual
 - [ ] (e) Bandeja + `PhoneDeck.exe`
@@ -33,9 +33,13 @@ Probar acciones sin celular (en otra terminal):
 .\scripts\try_action.ps1 media play-pause
 ```
 
+Conectar el celular por cable: ver [docs/usb.md](docs/usb.md).
+
 Calidad:
 
 ```bat
+bun install --frozen-lockfile   :: ESLint (solo herramientas, auditado con bun audit)
+bun run lint                    :: verifica compatibilidad con Chrome 60
 .venv\Scripts\python -m pytest
 .venv\Scripts\ruff check src tests plugins
 .venv\Scripts\mypy
