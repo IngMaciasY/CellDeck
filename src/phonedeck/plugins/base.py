@@ -146,10 +146,11 @@ class PluginRegistry:
             )
             return params
         except ValidationError as exc:
-            details = "; ".join(
-                f"{'.'.join(str(p) for p in err['loc']) or 'acción'}: {err['msg']}"
-                for err in exc.errors()
-            )
+            parts = []
+            for err in exc.errors():
+                where = ".".join(str(p) for p in err["loc"]) or "acción"
+                parts.append(f"{where}: {err['msg'].removeprefix('Value error, ')}")
+            details = "; ".join(parts)
             raise PydanticCustomError(
                 "action_invalid",
                 "Acción '{t}' inválida: {details}",

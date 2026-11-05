@@ -35,9 +35,14 @@ class ConfigConflictError(Exception):
     """Se intentó guardar sobre una revisión que ya no es la actual."""
 
 
+def clean_msg(msg: str) -> str:
+    """Quita el prefijo técnico de pydantic ("Value error, ...") para mostrarlo al usuario."""
+    return msg.removeprefix("Value error, ")
+
+
 def _format_errors(exc: ValidationError) -> list[dict[str, Any]]:
     return [
-        {"loc": ".".join(str(p) for p in err["loc"]), "msg": err["msg"]}
+        {"loc": ".".join(str(p) for p in err["loc"]), "msg": clean_msg(err["msg"])}
         for err in exc.errors(include_url=False)
     ]
 

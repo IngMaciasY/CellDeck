@@ -53,6 +53,20 @@ async def save_config(body: SaveConfigRequest, state: StateDep, who: EditorDep) 
     return payload
 
 
+class ValidateConfigRequest(BaseModel):
+    config: dict[str, Any]
+
+
+@router.post("/config/validate")
+def validate_config(body: ValidateConfigRequest, state: StateDep, _: EditorDep) -> dict[str, Any]:
+    """Valida sin guardar (el editor lo usa al terminar de editar un botón)."""
+    try:
+        state.config_store.parse(body.config)
+    except ConfigError as exc:
+        raise HTTPException(422, {"message": str(exc), "errors": exc.errors}) from None
+    return {"ok": True}
+
+
 @router.get("/plugins")
 def list_plugins(state: StateDep, _: PrincipalDep) -> dict[str, Any]:
     """Tipos de acción disponibles con su esquema (para el editor visual)."""
