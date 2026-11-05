@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#0f1115">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="format-detection" content="telephone=no">
+  <title>PhoneDeck</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" href="icons/favicon-32.png">
+  <link rel="apple-touch-icon" href="icons/app-192.png">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <div id="app" class="app hidden">
+    <header class="bar">
+      <nav id="tabs" class="tabs" role="tablist" aria-label="Páginas"></nav>
+      <div class="bar-actions">
+        <span id="conn" class="conn conn-connecting" role="status" aria-label="Conectando"></span>
+        <button id="btn-fullscreen" class="icon-btn" type="button" aria-label="Pantalla completa"></button>
+        <button id="btn-menu" class="icon-btn" type="button" aria-label="Menú"></button>
+      </div>
+    </header>
+    <main id="page" class="page">
+      <div id="banner" class="banner hidden" role="alert"></div>
+      <div id="grid" class="grid"></div>
+    </main>
+  </div>
+
+  <!-- Emparejamiento por PIN (modo WiFi) -->
+  <section id="pair" class="screen hidden" aria-labelledby="pair-title">
+    <div class="pair-box">
+      <img src="icons/app-192.png" alt="" class="pair-logo">
+      <h1 id="pair-title">Emparejar con la PC</h1>
+      <p class="muted">Introduce el PIN que muestra PhoneDeck en la PC<br>(icono de la bandeja → <b>Mostrar QR / PIN</b>).</p>
+      <div id="pin-dots" class="pin-dots" aria-live="polite"></div>
+      <p id="pair-error" class="pair-error" role="alert"></p>
+      <div id="keypad" class="keypad"></div>
+    </div>
+  </section>
+
+  <!-- Pantalla de carga / reconexión -->
+  <section id="overlay" class="overlay" aria-live="polite">
+    <div class="spinner" aria-hidden="true"></div>
+    <p id="overlay-text">Conectando con la PC…</p>
+    <p id="overlay-hint" class="muted small"></p>
+    <button id="overlay-retry" class="btn hidden" type="button">Reintentar ahora</button>
+  </section>
+
+  <!-- Menú inferior -->
+  <div id="sheet-backdrop" class="backdrop hidden"></div>
+  <section id="sheet" class="sheet hidden" aria-label="Menú">
+    <div class="sheet-handle"></div>
+    <div id="sheet-info" class="sheet-info"></div>
+    <label class="row"><span>Vibrar al pulsar</span><input id="opt-haptics" type="checkbox"></label>
+    <label class="row"><span>Mantener pantalla encendida</span><input id="opt-nosleep" type="checkbox"></label>
+    <label class="row"><span>Pantalla completa al tocar</span><input id="opt-autofs" type="checkbox"></label>
+    <label class="row"><span>Tema</span>
+      <select id="opt-theme">
+        <option value="">Según la PC</option>
+        <option value="dark">Oscuro</option>
+        <option value="oled">OLED (negro puro)</option>
+        <option value="light">Claro</option>
+      </select>
+    </label>
+    <div class="sheet-buttons">
+      <button id="btn-reload" class="btn" type="button">Recargar</button>
+      <button id="btn-forget" class="btn btn-danger hidden" type="button">Olvidar este celular</button>
+    </div>
+    <p id="nosleep-hint" class="muted small"></p>
+  </section>
+
+  <div id="toasts" class="toasts" aria-live="polite"></div>
+
+  <!-- Scripts clásicos (sin módulos ES: Chrome 60 no los soporta) -->
+  <script src="js/util.js"></script>
+  <script src="js/icons.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/ws.js"></script>
+  <script src="js/nosleep.js"></script>
+  <script src="js/widgets.js"></script>
+  <script src="js/grid.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

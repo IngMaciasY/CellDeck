@@ -6,6 +6,7 @@ import asyncio
 import contextlib
 import json
 import logging
+import mimetypes
 from collections.abc import AsyncIterator, Awaitable, Callable, Coroutine
 from pathlib import Path
 from typing import Any
@@ -34,6 +35,21 @@ SECURITY_HEADERS = {
 }
 
 BackgroundTask = Callable[[AppState], Coroutine[Any, Any, None]]
+
+# En Windows, ``mimetypes`` lee el registro y a veces asocia .js con text/plain; con
+# "nosniff" Chrome bloquearía los scripts. Se fijan explícitamente.
+_MIME_TYPES = {
+    ".js": "application/javascript",
+    ".css": "text/css",
+    ".svg": "image/svg+xml",
+    ".json": "application/json",
+    ".webmanifest": "application/manifest+json",
+    ".webm": "video/webm",
+    ".png": "image/png",
+    ".ico": "image/x-icon",
+}
+for _ext, _type in _MIME_TYPES.items():
+    mimetypes.add_type(_type, _ext)
 
 
 def create_app(
@@ -82,6 +98,9 @@ def create_app(
             response.headers.setdefault(key, value)
         if request.url.path.startswith("/api/"):
             response.headers["Cache-Control"] = "no-store"
+        else:
+            # Revalidar siempre (ETag): tras actualizar PhoneDeck el celular no usa JS viejo.
+            response.headers.setdefault("Cache-Control", "no-cache")
         return response
 
     # Se añade al final para que sea la capa más externa.
