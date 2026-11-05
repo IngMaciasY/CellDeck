@@ -4,7 +4,7 @@ Dashboard personalizable para controlar una PC Windows desde un celular Android 
 (probado como objetivo: Xiaomi Redmi 5 Plus, Android 7/8, Chrome 60+). Sin instalar apps:
 el celular abre una página web servida por la PC, por cable USB (`adb reverse`) o WiFi.
 
-> 🚧 **En desarrollo.** Hitos completados: (a) servidor, (b) interfaz del celular y (c) datos en vivo.
+> 🚧 **En desarrollo.** Hitos completados: (a) servidor, (b) interfaz del celular, (c) datos en vivo y (d) editor visual.
 >
 > Funciona en celulares viejos (Chrome 60+, p. ej. Xiaomi Redmi 5 Plus), celulares nuevos,
 > tablets y también iPhone/iPad por WiFi: las columnas se adaptan solas a cada pantalla.
@@ -17,7 +17,8 @@ el celular abre una página web servida por la PC, por cable USB (`adb reverse`)
       pantalla siempre encendida, reconexión automática (Chrome 60+)
 - [x] (c) Ahora suena con portada, volumen en vivo con slider, CPU/RAM y columnas
       automáticas para cualquier tamaño de pantalla
-- [ ] (d) Editor visual
+- [x] (d) Editor visual desde el celular o la PC: crear, editar, mover (arrastrando) y borrar
+      botones, widgets y páginas; macros paso a paso; apariencia; guardado con control de conflictos
 - [ ] (e) Bandeja + `PhoneDeck.exe`
 - [ ] (f) CI/CD y documentación completa
 

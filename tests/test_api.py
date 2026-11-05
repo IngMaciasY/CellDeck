@@ -192,3 +192,27 @@ def test_revoke_devices(remote: TestClient, wifi_state: AppState) -> None:
     token = remote.post("/api/pair", json={"pin": wifi_state.settings.pin}).json()["token"]
     wifi_state.settings_store.revoke_all_devices()
     assert remote.get("/api/config", headers=auth(token)).status_code == 401
+
+
+def test_validate_config_endpoint(client: TestClient, state: AppState) -> None:
+    h = auth(local_token(client))
+    config = client.get("/api/config", headers=h).json()["config"]
+    assert client.post("/api/config/validate", json={"config": config}, headers=h).json() == {
+        "ok": True
+    }
+    config["pages"][0]["items"][1]["action"] = {"type": "keys", "combo": "ctrl+nope"}
+    res = client.post("/api/config/validate", json={"config": config}, headers=h)
+    assert res.status_code == 422
+    assert res.json()["detail"]["errors"][0]["loc"].startswith("pages.0.items.1")
+    assert not res.json()["detail"]["errors"][0]["msg"].startswith("Value error")
+    # Validar no guarda nada
+    assert state.config_store.config.pages[0].items[1].action.type == "media"
+
+
+def test_remote_cannot_validate_without_edit_permission(
+    remote: TestClient, wifi_state: AppState
+) -> None:
+    token = remote.post("/api/pair", json={"pin": wifi_state.settings.pin}).json()["token"]
+    config = remote.get("/api/config", headers=auth(token)).json()["config"]
+    res = remote.post("/api/config/validate", json={"config": config}, headers=auth(token))
+    assert res.status_code == 403
