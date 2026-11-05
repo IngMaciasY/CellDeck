@@ -67,7 +67,9 @@ class Cdp:
 
 
 async def capture(ws_url: str, args: argparse.Namespace) -> bytes:
-    width, height = (786, 393) if args.landscape else (393, 786)
+    width, height = (int(v) for v in args.size.lower().split("x"))
+    if args.landscape and height > width:
+        width, height = height, width
     async with websockets.connect(ws_url, max_size=50_000_000) as ws:
         cdp = Cdp(ws)
         await cdp.call(
@@ -99,6 +101,9 @@ def main() -> None:
     parser.add_argument("output", type=Path)
     parser.add_argument("--url", default="http://127.0.0.1:8765/")
     parser.add_argument("--landscape", action="store_true")
+    parser.add_argument(
+        "--size", default="393x786", help="Ancho x alto en px CSS (393x786 = Redmi 5 Plus)"
+    )
     parser.add_argument("--js", default="")
     parser.add_argument("--wait", type=float, default=2.5)
     parser.add_argument("--dpr", type=float, default=1.0, help="2.75 = densidad real del Redmi")

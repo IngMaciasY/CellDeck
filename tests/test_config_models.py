@@ -123,3 +123,22 @@ def test_widget_and_pages_required(registry: PluginRegistry) -> None:
     ok["pages"][0]["items"][0]["widget"] = "weather"
     with pytest.raises(ConfigError):
         parse(registry, ok)
+
+
+@pytest.mark.parametrize(
+    "appearance,ok",
+    [
+        ({"layout": "auto", "button_size": 104}, True),
+        ({"layout": "fixed", "columns_portrait": 4}, True),
+        ({"layout": "grid"}, False),
+        ({"button_size": 30}, False),
+        ({"button_size": 500}, False),
+    ],
+)
+def test_appearance_layout(registry: PluginRegistry, appearance: dict[str, Any], ok: bool) -> None:
+    data = {"appearance": appearance, "pages": [{"id": "p", "name": "P", "items": []}]}
+    if ok:
+        assert parse(registry, data).appearance.layout in ("auto", "fixed")
+    else:
+        with pytest.raises(ConfigError):
+            parse(registry, data)
