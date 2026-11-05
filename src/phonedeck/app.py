@@ -1,17 +1,24 @@
-"""Orquestador: construye el estado, la app web y arranca el servidor."""
+"""Orquestador: construye el estado y la app web, y arranca/para el servidor."""
 
 from __future__ import annotations
 
+import dataclasses
 import logging
 import socket
+import threading
+import time
 from dataclasses import dataclass
 from pathlib import Path
+
+import uvicorn
 
 from phonedeck import paths
 from phonedeck.server import create_app, run_server
 from phonedeck.state import AppState, build_state
 
 log = logging.getLogger(__name__)
+
+START_TIMEOUT_S = 15.0
 
 
 @dataclass(frozen=True, slots=True)
@@ -23,6 +30,10 @@ class LaunchOptions:
 
 
 class PortInUseError(RuntimeError):
+    pass
+
+
+class ServerStartError(RuntimeError):
     pass
 
 
@@ -38,7 +49,8 @@ def ensure_port_free(host: str, port: int) -> None:
             sock.bind((host, port))
         except OSError as exc:
             raise PortInUseError(
-                f"El puerto {port} ya está en uso. ¿PhoneDeck ya se está ejecutando?"
+                f"El puerto {port} ya está en uso. ¿PhoneDeck (u otro programa) ya se está "
+                "ejecutando?"
             ) from exc
 
 
@@ -54,14 +66,85 @@ def prepare(options: LaunchOptions) -> tuple[AppState, str, int]:
     return state, host, port
 
 
-def serve(options: LaunchOptions) -> None:
-    """Arranca el servidor en el hilo actual (bloqueante)."""
+def _build_server(options: LaunchOptions) -> tuple[AppState, uvicorn.Server, str, int]:
     from phonedeck.services import BACKGROUND_SERVICES
 
     state, host, port = prepare(options)
     ensure_port_free(host, port)
     app = create_app(state, web_dir=paths.web_dir(), background=list(BACKGROUND_SERVICES))
+    return state, run_server(app, host, port), host, port
+
+
+def serve(options: LaunchOptions) -> None:
+    """Arranca el servidor en el hilo actual (bloqueante). Modo ``--no-tray``."""
+    state, server, host, port = _build_server(options)
     log.info("Escuchando en http://%s:%d", host, port)
     if state.mode == "wifi":
         log.info("Modo WiFi activo. PIN de emparejamiento: %s", state.settings.pin)
-    run_server(app, host, port).run()
+    server.run()
+
+
+class ServerController:
+    """Ejecuta el servidor en un hilo de fondo (la bandeja ocupa el hilo principal)."""
+
+    def __init__(self, options: LaunchOptions) -> None:
+        self.options = options
+        self.state: AppState | None = None
+        self.port: int = 0
+        self._server: uvicorn.Server | None = None
+        self._thread: threading.Thread | None = None
+        self._lock = threading.Lock()
+
+    @property
+    def running(self) -> bool:
+        return self._thread is not None and self._thread.is_alive()
+
+    def panel_url(self) -> str:
+        return f"http://127.0.0.1:{self.port}/"
+
+    def start(self) -> None:
+        """Arranca y espera a que el servidor esté escuchando.
+
+        Raises:
+            PortInUseError: puerto ocupado.
+            ServerStartError: el servidor no llegó a arrancar (ver log).
+        """
+        with self._lock:
+            state, server, host, port = _build_server(self.options)
+            thread = threading.Thread(target=server.run, name="phonedeck-server", daemon=True)
+            thread.start()
+            deadline = time.monotonic() + START_TIMEOUT_S
+            while not server.started:
+                if not thread.is_alive() or time.monotonic() > deadline:
+                    server.should_exit = True
+                    raise ServerStartError("El servidor no pudo arrancar (revisa el log)")
+                time.sleep(0.05)
+            self.state, self._server, self._thread, self.port = state, server, thread, port
+            log.info("Servidor en http://%s:%d (modo %s)", host, port, state.mode)
+
+    def stop(self, timeout: float = 8.0) -> None:
+        with self._lock:
+            if self._server is not None:
+                self._server.should_exit = True
+            if self._thread is not None:
+                self._thread.join(timeout)
+                if self._thread.is_alive():
+                    log.warning("El servidor no se detuvo a tiempo")
+            self._server = None
+            self._thread = None
+
+    def restart(self, mode: str | None = None) -> None:
+        """Reinicia (p. ej. al cambiar entre USB y WiFi, que cambia la interfaz de escucha)."""
+        self.stop()
+        if mode is not None:
+            # El modo elegido en la bandeja se guarda en settings.json; ya no se fuerza.
+            self.options = dataclasses.replace(self.options, mode=None)
+        # Windows puede tardar un instante en liberar el puerto.
+        for attempt in range(10):
+            try:
+                self.start()
+                return
+            except PortInUseError:
+                if attempt == 9:
+                    raise
+                time.sleep(0.3)
