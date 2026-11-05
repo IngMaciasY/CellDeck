@@ -18,6 +18,7 @@ from fastapi.staticfiles import StaticFiles
 from phonedeck.api import ROUTERS
 from phonedeck.api.routes_config import config_payload
 from phonedeck.config.models import Config
+from phonedeck.live import handle_client_message
 from phonedeck.security import HostCheckMiddleware, is_loopback
 from phonedeck.state import AppState
 
@@ -97,7 +98,8 @@ def create_app(
         for key, value in SECURITY_HEADERS.items():
             response.headers.setdefault(key, value)
         if request.url.path.startswith("/api/"):
-            response.headers["Cache-Control"] = "no-store"
+            # Por defecto la API no se cachea (la portada fija su propia política).
+            response.headers.setdefault("Cache-Control", "no-store")
         else:
             # Revalidar siempre (ETag): tras actualizar PhoneDeck el celular no usa JS viejo.
             response.headers.setdefault("Cache-Control", "no-cache")
@@ -138,7 +140,7 @@ def create_app(
         try:
             while True:
                 msg = await ws.receive_text()
-                await _handle_ws_message(state, ws, msg)
+                await handle_client_message(state, ws, msg)
         except WebSocketDisconnect:
             pass
         finally:
@@ -149,20 +151,6 @@ def create_app(
     else:
         log.warning("No se encontró la carpeta web (%s): solo API", web_dir)
     return app
-
-
-async def _handle_ws_message(state: AppState, ws: WebSocket, raw: str) -> None:
-    """Mensajes del cliente. Solo se aceptan tipos conocidos."""
-    if len(raw) > 4096:
-        return
-    try:
-        msg = json.loads(raw)
-    except json.JSONDecodeError:
-        return
-    if not isinstance(msg, dict):
-        return
-    if msg.get("type") == "ping":
-        await ws.send_text('{"type":"pong"}')
 
 
 def run_server(app: FastAPI, host: str, port: int) -> uvicorn.Server:
