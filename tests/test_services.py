@@ -137,12 +137,14 @@ async def test_stats_service(state: AppState) -> None:
 async def test_poller_backoff(state: AppState) -> None:
     class Broken(Poller):
         name = "roto"
+        topic = "stats"
 
         async def tick(self) -> None:
             raise RuntimeError("fallo")
 
     poller = Broken(state)
-    assert poller.next_delay() == Broken.idle_interval  # sin clientes
+    assert not poller.wanted()  # nadie suscrito a "stats": no se consulta a Windows
+    assert poller.next_delay() == Broken.idle_interval
     poller.errors = 3
     assert poller.next_delay() == min(30.0, Broken.idle_interval * 8)
 

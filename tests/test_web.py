@@ -28,6 +28,8 @@ def web_client(state: AppState) -> Iterator[TestClient]:
     [
         ("/", "text/html"),
         ("/js/app.js", "application/javascript"),
+        ("/js/editor.js", "application/javascript"),
+        ("/css/editor.css", "text/css"),
         ("/css/app.css", "text/css"),
         ("/manifest.json", "application/json"),
         ("/media/nosleep.webm", "video/webm"),
@@ -58,13 +60,15 @@ def test_index_references_existing_files() -> None:
     assert " onclick=" not in html
 
 
-def test_service_worker_shell_exists() -> None:
+def test_service_worker_never_caches_api() -> None:
     sw = (WEB / "sw.js").read_text(encoding="utf-8")
-    block = re.search(r"const SHELL = \[(.*?)\];", sw, re.S)
-    assert block
-    for entry in re.findall(r"'([^']+)'", block.group(1)):
-        if entry != "./":
-            assert (WEB / entry).is_file(), f"sw.js cachea un archivo inexistente: {entry}"
+    assert "url.pathname.indexOf('/api/') === 0" in sw and "'/ws'" in sw
+    assert "searchParams.has('v')" in sw  # caché primero solo para recursos versionados
+
+
+def test_lazy_editor_files_exist() -> None:
+    for path in ("js/editor.js", "js/editor-forms.js", "css/editor.css"):
+        assert (WEB / path).is_file(), path
 
 
 def test_manifest_icons_exist() -> None:
