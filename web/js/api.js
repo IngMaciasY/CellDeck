@@ -69,6 +69,9 @@
     saveConfig: function (revision, config) {
       return request('PUT', '/api/config', { revision: revision, config: config });
     },
+    validateConfig: function (config) {
+      return request('POST', '/api/config/validate', { config: config });
+    },
     run: function (page, item, confirmed) {
       return request('POST', '/api/run', { page: page, item: item, confirmed: !!confirmed });
     },

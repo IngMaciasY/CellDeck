@@ -6,7 +6,7 @@
  */
 'use strict';
 
-const CACHE = 'phonedeck-shell-v1';
+const CACHE = 'phonedeck-shell-v2';
 const SHELL = [
   './',
   'index.html',
@@ -19,6 +19,8 @@ const SHELL = [
   'js/nosleep.js',
   'js/widgets.js',
   'js/grid.js',
+  'js/editor-forms.js',
+  'js/editor.js',
   'js/app.js',
   'icons/app-192.png',
   'media/nosleep.webm'

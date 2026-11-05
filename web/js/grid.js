@@ -104,35 +104,63 @@
    * @param {HTMLElement} gridEl
    * @param {object} page  página de la config
    * @param {object} appearance
-   * @param {{onPress: function, widgetCtx: object}} handlers
+   * @param {{onPress: function, widgetCtx: object,
+   *          edit?: {onSelect: function(object), onAdd: function()}}} handlers
+   *   Con `edit` se pinta el modo edición: tocar abre el editor (no ejecuta nada),
+   *   cada elemento tiene un asa para arrastrarlo y al final hay un "+ Añadir".
    */
   function render(gridEl, page, appearance, handlers) {
     destroyWidgets();
     gridEl.innerHTML = '';
     gridEl.classList.toggle('no-labels', appearance && appearance.show_labels === false);
     const cols = layout(gridEl, appearance);
+    const edit = handlers.edit || null;
 
-    if (!page || !page.items || !page.items.length) {
-      gridEl.appendChild(u.el('div', 'empty', 'Esta página está vacía.'));
+    if ((!page || !page.items || !page.items.length) && !edit) {
+      gridEl.appendChild(u.el('div', 'empty', 'Esta página está vacía. Toca el lápiz ✎ para añadir botones.'));
       return;
     }
 
-    page.items.forEach(function (item) {
+    (page ? page.items : []).forEach(function (item) {
       let node;
       if (item.kind === 'widget') {
         const widget = global.PD.widgets.create(item, handlers.widgetCtx);
         widgets.push(widget);
         node = widget.el;
       } else {
-        node = createButton(item, handlers.onPress);
+        node = createButton(item, edit ? function () { edit.onSelect(item); } : handlers.onPress);
       }
       const w = Math.min(item.w || 1, cols);
       const h = item.h || 1;
       if (w > 1) node.style.gridColumn = 'span ' + w;
       if (h > 1) node.style.gridRow = 'span ' + h;
+      if (edit) decorateForEdit(node, item, edit);
       gridEl.appendChild(node);
     });
+
+    if (edit) {
+      const add = u.el('button', 'key add-tile');
+      add.type = 'button';
+      add.appendChild(icon('plus'));
+      add.appendChild(u.el('span', 'key-label', 'Añadir'));
+      add.addEventListener('click', edit.onAdd);
+      gridEl.appendChild(add);
+    }
     resizeWidgets();   // ya están en el DOM: se pueden medir
+  }
+
+  /** Modo edición: capa que intercepta toques + asa de arrastre. */
+  function decorateForEdit(node, item, edit) {
+    node.classList.add('edit-item');
+    if (item.kind === 'widget') {
+      // Los widgets tienen controles propios: la capa evita usarlos al editar.
+      const overlay = node.appendChild(u.el('div', 'edit-overlay'));
+      overlay.addEventListener('click', function () { edit.onSelect(item); });
+    }
+    const handle = node.appendChild(u.el('span', 'drag-handle'));
+    handle.setAttribute('aria-label', 'Arrastrar para mover');
+    handle.appendChild(icon('grip'));
+    handle.addEventListener('click', function (e) { e.stopPropagation(); });
   }
 
   /** Reenvía un mensaje en vivo a los widgets visibles. */

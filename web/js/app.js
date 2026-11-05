@@ -82,9 +82,11 @@
   function renderPage() {
     const page = currentPage();
     if (page) state.pageId = page.id;
+    const editing = !!PD.editor && PD.editor.isActive();
     PD.grid.render($('grid'), page, state.config.appearance, {
       onPress: onButtonPress,
-      widgetCtx: { send: sendLive, snapshot: state.snapshot }
+      widgetCtx: { send: sendLive, snapshot: state.snapshot },
+      edit: editing ? PD.editor.gridHandlers() : null
     });
   }
 
@@ -124,6 +126,42 @@
     state.revision = payload.revision;
     showConfigError(payload.error);
     renderAll();
+  }
+
+  /** Config nueva desde la PC (WebSocket o al reconectar). */
+  function receiveConfig(payload) {
+    if (!payload || payload.revision === state.revision) return;
+    if (PD.editor && PD.editor.isActive()) {
+      // Mientras se edita no se pisa el borrador: se guarda la versión de la PC aparte.
+      state.saved = payload.config;
+      state.revision = payload.revision;
+      showConfigError(payload.error);
+      PD.editor.onRemoteConfig(payload);
+      return;
+    }
+    applyConfigPayload(payload);
+  }
+
+  /** El editor muestra su borrador (draft) o vuelve a la config guardada (null). */
+  function useConfig(draft) {
+    if (draft) {
+      if (!state.saved) state.saved = state.config;
+      state.config = draft;
+    } else if (state.saved) {
+      state.config = state.saved;
+      state.saved = null;
+    }
+    renderAll();
+  }
+
+  /** Tras guardar desde el editor. */
+  function applySaved(payload) {
+    state.saved = null;
+    applyConfigPayload(payload);
+  }
+
+  function updateEditButton() {
+    u.show($('btn-edit'), !!(state.info && state.info.can_edit));
   }
 
   // ------------------------------------------------------------- acciones
@@ -202,7 +240,7 @@
   // ------------------------------------------------------------ WebSocket
   function onLiveMessage(type, data) {
     if (type === 'config') {
-      if (data && data.revision !== state.revision) applyConfigPayload(data);
+      receiveConfig(data);
       return;
     }
     if (type === 'error') {
@@ -211,6 +249,7 @@
     }
     if (type === 'hello') {
       if (data && state.info) state.info.can_edit = data.can_edit;
+      updateEditButton();
       return;
     }
     if (type === 'media' || type === 'volume' || type === 'stats') {
@@ -228,9 +267,7 @@
     if (status === 'online') {
       setOverlay(false);
       // Puede haber cambiado la config mientras estábamos desconectados.
-      api.getConfig().then(function (payload) {
-        if (payload.revision !== state.revision) applyConfigPayload(payload);
-      }, function () { /* se reintentará al reconectar */ });
+      api.getConfig().then(receiveConfig, function () { /* se reintentará al reconectar */ });
     } else if (status === 'offline' && state.config) {
       setOverlay(true, 'Se perdió la conexión con la PC', reconnectHint(), true);
     }
@@ -481,14 +518,15 @@
     let tracking = false;
     page.addEventListener('touchstart', function (e) {
       if (e.touches.length !== 1) { tracking = false; return; }
-      // No interferir con los sliders.
-      tracking = !(e.target && e.target.tagName === 'INPUT');
+      // No interferir con sliders, asas de arrastre del editor ni ventanas modales.
+      const t = e.target;
+      tracking = !(t && (t.tagName === 'INPUT' || (t.closest && t.closest('.drag-handle, .modal'))));
       x0 = e.touches[0].clientX;
       y0 = e.touches[0].clientY;
       t0 = Date.now();
     }, { passive: true });
     page.addEventListener('touchend', function (e) {
-      if (!tracking) return;
+      if (!tracking || (PD.editor && PD.editor.isDragging())) return;
       tracking = false;
       const t = e.changedTouches[0];
       const dx = t.clientX - x0;
@@ -538,6 +576,7 @@
     // Primero se muestra (para que el grid tenga ancho) y luego se pinta.
     u.show($('app'), true);
     applyConfigPayload(payload);
+    updateEditButton();
     state.lastCols = PD.grid.columnsFor(state.config.appearance);
     setOverlay(false);
     if (state.connection) state.connection.stop();
@@ -553,6 +592,7 @@
 
   function init() {
     api.onUnauthorized(handleUnauthorized);
+    PD.editor.init();
     bindMenu();
     bindSwipe();
     updateFullscreenIcon();
@@ -592,7 +632,9 @@
     renderAll: renderAll,
     goToPage: goToPage,
     showPairing: showPairing,
-    reload: start
+    reload: start,
+    useConfig: useConfig,
+    applySaved: applySaved
   };
 
   if (document.readyState === 'loading') {

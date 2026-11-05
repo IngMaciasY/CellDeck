@@ -22,11 +22,23 @@
       <nav id="tabs" class="tabs" role="tablist" aria-label="Páginas"></nav>
       <div class="bar-actions">
         <span id="conn" class="conn conn-connecting" role="status" aria-label="Conectando"></span>
+        <button id="btn-edit" class="icon-btn hidden" type="button" aria-label="Editar"></button>
         <button id="btn-fullscreen" class="icon-btn" type="button" aria-label="Pantalla completa"></button>
         <button id="btn-menu" class="icon-btn" type="button" aria-label="Menú"></button>
       </div>
     </header>
     <main id="page" class="page">
+      <!-- Barra del editor visual (solo en modo edición) -->
+      <div id="edit-bar" class="edit-bar hidden">
+        <span id="ed-status" class="edit-status">Modo edición</span>
+        <div class="edit-actions">
+          <button id="ed-page" class="btn btn-small" type="button">Página</button>
+          <button id="ed-add-page" class="btn btn-small" type="button">+ Página</button>
+          <button id="ed-appearance" class="btn btn-small" type="button">Apariencia</button>
+          <button id="ed-cancel" class="btn btn-small" type="button">Cancelar</button>
+          <button id="ed-save" class="btn btn-small btn-primary" type="button" disabled>Guardar</button>
+        </div>
+      </div>
       <div id="banner" class="banner hidden" role="alert"></div>
       <div id="grid" class="grid"></div>
     </main>
@@ -94,6 +106,8 @@
   <script src="js/nosleep.js"></script>
   <script src="js/widgets.js"></script>
   <script src="js/grid.js"></script>
+  <script src="js/editor-forms.js"></script>
+  <script src="js/editor.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
