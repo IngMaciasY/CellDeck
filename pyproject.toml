@@ -60,7 +60,7 @@ phonedeck = ["config/default_config.json"]
 [tool.ruff]
 line-length = 100
 target-version = "py311"
-src = ["src", "tests", "plugins"]
+src = ["src", "tests", "plugins", "scripts"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP", "S", "SIM", "RUF", "ASYNC"]
@@ -70,6 +70,8 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["S101", "S105", "S106", "ASYNC240"]
+# Herramientas de desarrollo: lanzan el navegador local y llevan JS embebido en strings.
+"scripts/**" = ["S603", "S310", "E501"]
 
 [tool.mypy]
 python_version = "3.11"
