@@ -36,9 +36,15 @@ if errorlevel 1 (
 )
 
 echo.
-echo [OK] Tunel creado. En el celular abre Chrome y entra en:
+echo [OK] Tunel creado. Abriendo PhoneDeck en el celular...
+rem Se abre con "http://" explicito: si se escribe a mano solo "localhost:8765",
+rem los Chrome modernos pueden intentar https:// y fallar ("Invalid HTTP request").
+adb shell am start -a android.intent.action.VIEW -d "http://localhost:%PORT%/" >nul 2>nul
+echo.
+echo Si no se abre solo, en Chrome del celular escribe la direccion COMPLETA:
 echo.
 echo        http://localhost:%PORT%
 echo.
+echo Consejo: menu de Chrome - "Anadir a pantalla de inicio" para no tener que escribirla.
 echo Si desconectas el cable, vuelve a ejecutar este script.
 exit /b 0

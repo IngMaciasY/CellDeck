@@ -64,4 +64,5 @@ en `C:\platform-tools`) y añade esa carpeta al `PATH`. Comprueba con `adb versi
 | `adb devices` no muestra nada | Cambia de cable (algunos solo cargan), usa otro puerto USB, revisa que la depuración USB esté activa. |
 | Aparece `unauthorized` | Desbloquea el celular y acepta el diálogo. Si no aparece: Opciones de desarrollador → *Revocar autorizaciones de depuración USB* y reconecta. |
 | `http://localhost:8765` no carga | Comprueba que PhoneDeck esté en marcha en la PC y repite `connect_usb.bat`. |
+| Error de conexión segura / SSL, o el log dice `Invalid HTTP request received` | Chrome está entrando por `https://`. Escribe la dirección **completa con `http://`** (`http://localhost:8765`) o deja que `connect_usb.bat` la abra solo. Después añádela a la pantalla de inicio. |
 | La pantalla se apaga | Activa **Pantalla activa** en Opciones de desarrollador, o deja activo "Mantener pantalla encendida" en el menú de PhoneDeck. |
