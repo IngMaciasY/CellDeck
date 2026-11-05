@@ -1,0 +1,24 @@
+/* PhoneDeck - página de emparejamiento (se ve en la PC) */
+.pair-page { overflow: auto; -webkit-user-select: text; user-select: text; }
+.pair-wrap { max-width: 760px; margin: 0 auto; padding: 24px 18px 40px; }
+.pair-header { display: flex; align-items: center; margin-bottom: 14px; }
+.pair-header img { margin-right: 14px; border-radius: 12px; }
+.pair-header h1 { margin: 0; font-size: 26px; font-weight: 500; }
+.pair-header p { margin: 4px 0 0; }
+.pair-msg { min-height: 20px; }
+.pair-card { margin: 16px 0; padding: 18px 20px; border-radius: 16px; background: var(--surface); }
+.pair-card h2 { margin: 0 0 10px; font-size: 19px; font-weight: 500; }
+.pair-card ol { margin: 0 0 14px; padding-left: 22px; line-height: 1.7; }
+.pair-qr-row { display: flex; flex-wrap: wrap; align-items: center; }
+.pair-qr {
+  width: 240px;
+  height: 240px;
+  margin: 0 24px 12px 0;
+  padding: 10px;
+  border-radius: 12px;
+  background: #fff;
+  image-rendering: pixelated;
+}
+.pair-pin { margin: 2px 0 14px; font-size: 44px; font-weight: 300; letter-spacing: 0.18em; font-variant-numeric: tabular-nums; }
+.pair-url { margin: 2px 0 8px; font-size: 18px; word-break: break-all; }
+code { padding: 1px 6px; border-radius: 6px; background: var(--surface-2); }

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PhoneDeck · Conectar un celular</title>
+  <link rel="icon" type="image/png" href="icons/favicon-32.png">
+  <link rel="stylesheet" href="css/app.css">
+  <link rel="stylesheet" href="css/pair.css">
+</head>
+<body class="pair-page">
+  <main class="pair-wrap">
+    <header class="pair-header">
+      <img src="icons/app-192.png" alt="" width="56" height="56">
+      <div>
+        <h1>Conectar un celular</h1>
+        <p class="muted">Esta página solo funciona en la propia PC.</p>
+      </div>
+    </header>
+
+    <p id="pair-msg" class="pair-msg">Cargando…</p>
+
+    <section id="wifi-box" class="pair-card hidden">
+      <h2>Por WiFi</h2>
+      <ol>
+        <li>Conecta el celular a la <b>misma red WiFi</b> que esta PC.</li>
+        <li>Escanea el código con la cámara del celular (o abre la dirección en su navegador).</li>
+        <li>Si te lo pide, introduce el PIN.</li>
+      </ol>
+      <div class="pair-qr-row">
+        <img id="qr" class="pair-qr" alt="Código QR de conexión">
+        <div>
+          <p class="muted small">PIN</p>
+          <p id="pin" class="pair-pin">------</p>
+          <p class="muted small">Dirección</p>
+          <p id="url" class="pair-url"></p>
+          <div id="other-urls" class="small muted"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="usb-box" class="pair-card">
+      <h2>Por cable USB</h2>
+      <ol>
+        <li>Activa la <b>Depuración USB</b> en el celular (ver <code>docs/usb.md</code>).</li>
+        <li>Conecta el cable y acepta "Permitir depuración USB".</li>
+        <li>Icono de PhoneDeck en la bandeja → <b>Conectar celular por USB</b>.</li>
+        <li>Se abrirá solo en el celular. Si no: <code id="usb-url">http://localhost:8765</code></li>
+      </ol>
+    </section>
+
+    <section id="usb-only" class="pair-card hidden">
+      <h2>¿Sin cable?</h2>
+      <p>Ahora mismo PhoneDeck está en <b>modo USB</b> (solo acepta conexiones de esta PC y por cable).
+        Para conectar por WiFi, activa <b>Modo WiFi</b> en el menú del icono de la bandeja.</p>
+    </section>
+  </main>
+  <script src="js/pair.js"></script>
+</body>
+</html>

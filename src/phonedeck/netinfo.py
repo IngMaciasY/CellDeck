@@ -33,6 +33,24 @@ def local_ipv4_addresses() -> list[str]:
     return sorted(set(result))
 
 
+def primary_ipv4() -> str | None:
+    """IP de la interfaz con la ruta por defecto (la que suele ver el celular por WiFi).
+
+    Se "conecta" un socket UDP a una IP privada: no se envía ningún paquete, solo se
+    pregunta al sistema qué interfaz usaría.
+    """
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+            sock.connect(("10.255.255.255", 1))
+            ip: str = sock.getsockname()[0]
+        if ipaddress.ip_address(ip).is_private and not ipaddress.ip_address(ip).is_loopback:
+            return ip
+    except OSError:
+        pass
+    addresses = local_ipv4_addresses()
+    return addresses[0] if addresses else None
+
+
 class AllowedHosts:
     """Calcula (con caché) los valores de ``Host`` aceptados."""
 

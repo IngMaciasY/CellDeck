@@ -65,6 +65,7 @@ def create_app(
         async def on_config_change(_: Config) -> None:
             await state.hub.broadcast("config", config_payload(state))
 
+        state.loop = asyncio.get_running_loop()
         tasks = [
             asyncio.create_task(state.config_store.watch(on_config_change), name="config-watch")
         ]

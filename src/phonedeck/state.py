@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import time
+from collections.abc import Coroutine
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Any
 
 from phonedeck import __version__
 from phonedeck.config.settings import Settings, SettingsStore
@@ -55,10 +58,21 @@ class AppState:
     version: str = __version__
     started_at: float = field(default_factory=time.time)
     live: LiveState = field(default_factory=LiveState)
+    # Bucle de eventos del servidor (se fija al arrancar). La bandeja vive en otro hilo y
+    # lo usa para ejecutar corrutinas de forma segura.
+    loop: asyncio.AbstractEventLoop | None = None
 
     @property
     def settings(self) -> Settings:
         return self.settings_store.settings
+
+    def run_threadsafe(self, coro: Coroutine[Any, Any, Any], timeout: float = 5.0) -> Any:
+        """Ejecuta una corrutina en el bucle del servidor desde otro hilo (la bandeja)."""
+        if self.loop is None or self.loop.is_closed():
+            coro.close()
+            return None
+        future = asyncio.run_coroutine_threadsafe(coro, self.loop)
+        return future.result(timeout)
 
 
 def build_state(
