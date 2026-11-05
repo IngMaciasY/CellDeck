@@ -13,10 +13,13 @@ from typing import Any
 
 import uvicorn
 from fastapi import FastAPI, Request, Response, WebSocket, WebSocketDisconnect
+from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
 from phonedeck.api import ROUTERS
 from phonedeck.api.routes_config import config_payload
+from phonedeck.assets import IMMUTABLE, compute_asset_version, render_html
 from phonedeck.config.models import Config
 from phonedeck.live import handle_client_message
 from phonedeck.security import HostCheckMiddleware, is_loopback
@@ -101,11 +104,16 @@ def create_app(
         if request.url.path.startswith("/api/"):
             # Por defecto la API no se cachea (la portada fija su propia política).
             response.headers.setdefault("Cache-Control", "no-store")
+        elif request.query_params.get("v") and response.status_code == 200:
+            # URL versionada (?v=hash del contenido): se cachea para siempre.
+            response.headers["Cache-Control"] = IMMUTABLE
         else:
-            # Revalidar siempre (ETag): tras actualizar PhoneDeck el celular no usa JS viejo.
+            # HTML, sw.js, manifest...: revalidar siempre (ETag / 304).
             response.headers.setdefault("Cache-Control", "no-cache")
         return response
 
+    # gzip para HTML/JS/CSS/JSON (en WiFi con un celular viejo se nota; ~70 % menos).
+    app.add_middleware(GZipMiddleware, minimum_size=600, compresslevel=6)
     # Se añade al final para que sea la capa más externa.
     app.add_middleware(HostCheckMiddleware, allowed_hosts=state.allowed_hosts)
 
@@ -148,10 +156,36 @@ def create_app(
             state.hub.unregister(ws)
 
     if web_dir is not None and web_dir.is_dir():
-        app.mount("/", StaticFiles(directory=web_dir, html=True), name="web")
+        _mount_web(app, web_dir)
     else:
         log.warning("No se encontró la carpeta web (%s): solo API", web_dir)
     return app
+
+
+def _mount_web(app: FastAPI, web_dir: Path) -> None:
+    """Sirve web/: las páginas HTML con recursos versionados y el resto como estáticos."""
+    version = compute_asset_version(web_dir)
+    pages: dict[str, str] = {}
+    for name in ("index.html", "pair.html"):
+        path = web_dir / name
+        if path.is_file():
+            pages[name] = render_html(path.read_text(encoding="utf-8"), version)
+    log.info("Recursos web versionados (v=%s)", version)
+
+    def page(name: str) -> Callable[[], HTMLResponse]:
+        def handler() -> HTMLResponse:
+            return HTMLResponse(pages[name], headers={"Cache-Control": "no-cache"})
+
+        return handler
+
+    if "index.html" in pages:
+        app.add_api_route("/", page("index.html"), methods=["GET"], include_in_schema=False)
+        app.add_api_route(
+            "/index.html", page("index.html"), methods=["GET"], include_in_schema=False
+        )
+    if "pair.html" in pages:
+        app.add_api_route("/pair.html", page("pair.html"), methods=["GET"], include_in_schema=False)
+    app.mount("/", StaticFiles(directory=web_dir, html=True), name="web")
 
 
 def run_server(app: FastAPI, host: str, port: int) -> uvicorn.Server:

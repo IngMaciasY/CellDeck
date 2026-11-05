@@ -35,7 +35,14 @@ def session(request: Request, state: StateDep) -> dict[str, Any]:
     """
     loopback = is_loopback(client_ip(request))
     if loopback:
-        token = state.tokens.issue("local", state.settings.token_ttl_days)
+        # Reutilizar el token si sigue siendo válido: así las URLs con token (portada)
+        # no cambian en cada recarga y el navegador puede servirlas desde su caché.
+        current = request.headers.get(TOKEN_HEADER)
+        token = (
+            current
+            if current and state.tokens.verify(current) is not None
+            else state.tokens.issue("local", state.settings.token_ttl_days)
+        )
         return {"token": token, **_session_info(state, True)}
     if state.tokens.verify(request.headers.get(TOKEN_HEADER)) is None:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Emparejamiento requerido")

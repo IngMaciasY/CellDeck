@@ -1,30 +1,16 @@
 /*
- * PhoneDeck - service worker mínimo (solo se registra en http://localhost, contexto seguro).
- * Estrategia "red primero": siempre se usa la versión de la PC; la caché solo sirve
- * para mostrar la interfaz (y su aviso de reconexión) si la PC no responde.
- * Nunca se cachea /api/ ni /ws.
+ * PhoneDeck - service worker (solo se registra en http://localhost, contexto seguro).
+ *
+ * - Recursos versionados (?v=hash): "caché primero". Su contenido nunca cambia, así que
+ *   tras la primera visita no se piden de nuevo a la PC.
+ * - Páginas y demás: "red primero"; la caché solo sirve para mostrar la interfaz (y su
+ *   aviso de reconexión) si la PC no responde.
+ * - Nunca se cachea /api/ ni /ws.
  */
 'use strict';
 
-const CACHE = 'phonedeck-shell-v2';
-const SHELL = [
-  './',
-  'index.html',
-  'manifest.json',
-  'css/app.css',
-  'js/util.js',
-  'js/icons.js',
-  'js/api.js',
-  'js/ws.js',
-  'js/nosleep.js',
-  'js/widgets.js',
-  'js/grid.js',
-  'js/editor-forms.js',
-  'js/editor.js',
-  'js/app.js',
-  'icons/app-192.png',
-  'media/nosleep.webm'
-];
+const CACHE = 'phonedeck-v3';
+const SHELL = ['./'];
 
 self.addEventListener('install', function (event) {
   event.waitUntil(
@@ -46,23 +32,34 @@ self.addEventListener('activate', function (event) {
   );
 });
 
+const store = function (req, res) {
+  if (res && res.ok) {
+    const copy = res.clone();
+    caches.open(CACHE).then(function (cache) { cache.put(req, copy); });
+  }
+  return res;
+};
+
 self.addEventListener('fetch', function (event) {
   const req = event.request;
   const url = new URL(req.url);
   if (req.method !== 'GET' || url.origin !== self.location.origin) return;
   if (url.pathname.indexOf('/api/') === 0 || url.pathname === '/ws') return;
 
+  if (url.searchParams.has('v')) {
+    event.respondWith(
+      caches.match(req).then(function (hit) {
+        return hit || fetch(req).then(function (res) { return store(req, res); });
+      })
+    );
+    return;
+  }
+
   event.respondWith(
     fetch(req)
-      .then(function (res) {
-        if (res.ok) {
-          const copy = res.clone();
-          caches.open(CACHE).then(function (cache) { cache.put(req, copy); });
-        }
-        return res;
-      })
+      .then(function (res) { return store(req, res); })
       .catch(function () {
-        return caches.match(req).then(function (hit) { return hit || caches.match('index.html'); });
+        return caches.match(req).then(function (hit) { return hit || caches.match('./'); });
       })
   );
 });
