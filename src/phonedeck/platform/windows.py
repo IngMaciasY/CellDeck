@@ -17,6 +17,7 @@ import logging
 import os
 import subprocess
 import sys
+import time
 from collections.abc import Callable, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -115,6 +116,7 @@ HWND_BROADCAST = 0xFFFF
 WM_SYSCOMMAND = 0x0112
 SC_MONITORPOWER = 0xF170
 CREATE_NO_WINDOW = 0x08000000
+ENDPOINT_TTL_S = 3.0  # caché del dispositivo de audio
 
 _MEDIA_VK: dict[MediaKey, int] = {
     MediaKey.PLAY_PAUSE: 0xB3,
@@ -193,6 +195,7 @@ class WindowsBackend:
             max_workers=1, thread_name_prefix="phonedeck-com", initializer=_com_thread_init
         )
         self._artwork_cache: tuple[str, bytes] | None = None
+        self._endpoint_cache: tuple[float, Any] | None = None
         self._media_manager: Any = None
         self._shutdown_exe = str(
             Path(os.environ.get("SYSTEMROOT", r"C:\Windows")) / "System32" / "shutdown.exe"
@@ -254,10 +257,33 @@ class WindowsBackend:
         log.info("Abierto: %s %s", target, params or "")
 
     # ---------------------------------------------------------------- volumen
+    def _endpoint(self) -> Any:
+        """IAudioEndpointVolume del dispositivo de salida por defecto, con caché.
+
+        Enumerar el dispositivo cuesta ~10 ms; el slider puede pedir el volumen decenas
+        de veces por segundo. Se reutiliza durante `ENDPOINT_TTL_S` (si conectas unos
+        auriculares, el cambio se nota en ese plazo) y se descarta ante cualquier error.
+        Solo se usa desde el hilo COM, así que no necesita candado.
+        """
+        now = time.monotonic()
+        if self._endpoint_cache is not None and now - self._endpoint_cache[0] < ENDPOINT_TTL_S:
+            return self._endpoint_cache[1]
+        endpoint = self._fetch_endpoint()
+        self._endpoint_cache = (now, endpoint)
+        return endpoint
+
+    def _with_endpoint(self, fn: Callable[[Any], T]) -> T:
+        """Ejecuta `fn(endpoint)`; si el endpoint cacheado dejó de ser válido, reintenta."""
+        try:
+            return fn(self._endpoint())
+        except PlatformError:
+            raise
+        except Exception:
+            self._endpoint_cache = None  # dispositivo desconectado o cambiado
+            return fn(self._endpoint())
+
     @staticmethod
-    def _endpoint() -> Any:
-        """Obtiene IAudioEndpointVolume del dispositivo de salida por defecto.
-        Se pide en cada llamada porque el dispositivo puede cambiar (auriculares, HDMI...)."""
+    def _fetch_endpoint() -> Any:
         from pycaw.pycaw import AudioUtilities
 
         speakers = AudioUtilities.GetSpeakers()
@@ -274,20 +300,21 @@ class WindowsBackend:
         return ctypes.cast(iface, ctypes.POINTER(IAudioEndpointVolume))
 
     async def get_volume(self) -> VolumeState:
-        def _get() -> VolumeState:
-            ep = self._endpoint()
+        def _get(ep: Any) -> VolumeState:
             return VolumeState(
                 level=round(ep.GetMasterVolumeLevelScalar() * 100), muted=bool(ep.GetMute())
             )
 
-        return await self._in_com(_get)
+        return await self._in_com(lambda: self._with_endpoint(_get))
 
     async def set_volume(self, level: int) -> None:
         value = max(0, min(100, level)) / 100.0
-        await self._in_com(lambda: self._endpoint().SetMasterVolumeLevelScalar(value, None))
+        await self._in_com(
+            lambda: self._with_endpoint(lambda ep: ep.SetMasterVolumeLevelScalar(value, None))
+        )
 
     async def set_mute(self, muted: bool) -> None:
-        await self._in_com(lambda: self._endpoint().SetMute(int(muted), None))
+        await self._in_com(lambda: self._with_endpoint(lambda ep: ep.SetMute(int(muted), None)))
 
     # ------------------------------------------------------------ ahora suena
     async def get_now_playing(self) -> MediaInfo | None:
