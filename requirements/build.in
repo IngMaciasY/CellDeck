@@ -1,0 +1,18 @@
+# Dependencias para compilar PhoneDeck.exe (Windows, Python 3.13).
+# Mantener sincronizado con [project.dependencies] de pyproject.toml.
+# Tras cambiar este archivo:  python scripts/lock_deps.py   (regenera build.lock con hashes)
+fastapi
+uvicorn
+websockets
+pydantic
+psutil
+pystray
+pillow
+qrcode
+pycaw
+comtypes
+winrt-runtime
+winrt-Windows.Foundation
+winrt-Windows.Media.Control
+winrt-Windows.Storage.Streams
+pyinstaller
