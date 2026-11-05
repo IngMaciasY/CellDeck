@@ -1,0 +1,22 @@
+{
+  "name": "phonedeck-web-tooling",
+  "private": true,
+  "description": "Solo herramientas de lint del frontend (web/). El frontend no usa dependencias en ejecución.",
+  "license": "MIT",
+  "scripts": {
+    "lint": "eslint web"
+  },
+  "browserslist": [
+    "chrome >= 60"
+  ],
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "eslint": "10.14.0",
+    "eslint-plugin-compat": "7.0.2",
+    "globals": "17.14.0"
+  },
+  "overrides": {
+    "minimatch": "11.0.4"
+  },
+  "trustedDependencies": []
+}
