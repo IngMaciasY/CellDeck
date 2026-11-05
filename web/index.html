@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="theme-color" content="#0f1115">
   <meta name="mobile-web-app-capable" content="yes">
+  <!-- iPhone/iPad: "Añadir a pantalla de inicio" se abre sin barras de Safari -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="PhoneDeck">
   <meta name="format-detection" content="telephone=no">
   <title>PhoneDeck</title>
   <link rel="manifest" href="manifest.json">
@@ -56,6 +60,15 @@
     <label class="row"><span>Vibrar al pulsar</span><input id="opt-haptics" type="checkbox"></label>
     <label class="row"><span>Mantener pantalla encendida</span><input id="opt-nosleep" type="checkbox"></label>
     <label class="row"><span>Pantalla completa al tocar</span><input id="opt-autofs" type="checkbox"></label>
+    <label class="row"><span>Tamaño de botones<br><small id="cols-info" class="muted"></small></span>
+      <select id="opt-size">
+        <option value="">Según la PC</option>
+        <option value="80">Pequeños</option>
+        <option value="104">Medianos</option>
+        <option value="128">Grandes</option>
+        <option value="160">Muy grandes</option>
+      </select>
+    </label>
     <label class="row"><span>Tema</span>
       <select id="opt-theme">
         <option value="">Según la PC</option>

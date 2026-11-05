@@ -163,7 +163,8 @@
         return;
       }
       title.textContent = data.title || 'Sin título';
-      artist.textContent = data.artist || '';
+      // Artista · app de origen (Spotify, Brave...): útil si suenan varias cosas.
+      artist.textContent = [data.artist, data.app].filter(Boolean).join(' · ');
       el.classList.toggle('paused', data.status !== 'playing');
       const url = safeArtworkUrl(data.artwork);
       if (url !== lastArt) {

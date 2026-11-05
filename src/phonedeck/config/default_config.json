@@ -3,6 +3,8 @@
   "appearance": {
     "theme": "dark",
     "accent": "#4f8cff",
+    "layout": "auto",
+    "button_size": 104,
     "columns_portrait": 3,
     "columns_landscape": 6,
     "show_labels": true

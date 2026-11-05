@@ -205,6 +205,10 @@
       if (data && data.revision !== state.revision) applyConfigPayload(data);
       return;
     }
+    if (type === 'error') {
+      u.toast((data && data.message) || 'Error en la PC', 'error');
+      return;
+    }
     if (type === 'hello') {
       if (data && state.info) state.info.can_edit = data.can_edit;
       return;
@@ -354,8 +358,22 @@
     }
   }
 
+  /** ¿Abierta como app instalada (pantalla de inicio)? Entonces sobra el botón. */
+  function isStandalone() {
+    const mm = global.matchMedia;
+    return !!(navigator.standalone ||
+      (mm && (mm('(display-mode: fullscreen)').matches || mm('(display-mode: standalone)').matches)));
+  }
+
+  /** iPhone no tiene API de pantalla completa: se oculta el botón donde no sirve. */
+  function fullscreenSupported() {
+    const root = document.documentElement;
+    return !!(root.requestFullscreen || root.webkitRequestFullscreen) && !isStandalone();
+  }
+
   function updateFullscreenIcon() {
     const btn = $('btn-fullscreen');
+    u.show(btn, fullscreenSupported() || !!fullscreenElement());
     btn.innerHTML = '';
     btn.appendChild(PD.icons.icon(fullscreenElement() ? 'minimize' : 'maximize'));
   }
@@ -391,6 +409,8 @@
     $('opt-nosleep').checked = u.store.get('nosleep', true);
     $('opt-autofs').checked = u.store.get('autofs', false);
     $('opt-theme').value = u.store.get('theme', '');
+    $('opt-size').value = String(u.store.get('btnsize', ''));
+    updateColsInfo();
     u.show($('btn-forget'), !info.loopback);
     updateNoSleepHint();
     u.show($('sheet-backdrop'), true);
@@ -400,6 +420,13 @@
   function closeSheet() {
     u.show($('sheet-backdrop'), false);
     u.show($('sheet'), false);
+  }
+
+  function updateColsInfo() {
+    if (!state.config) return;
+    const lay = PD.grid.effectiveLayout(state.config.appearance);
+    const cols = PD.grid.columnsFor(state.config.appearance);
+    $('cols-info').textContent = cols + ' columnas · ' + (lay.mode === 'fixed' ? 'fijas' : 'automáticas');
   }
 
   function updateNoSleepHint() {
@@ -429,6 +456,14 @@
     $('opt-theme').addEventListener('change', function (e) {
       u.store.set('theme', e.target.value);
       applyTheme();
+    });
+    $('opt-size').addEventListener('change', function (e) {
+      // Preferencia solo de este celular: no cambia la config de la PC ni otros dispositivos.
+      if (e.target.value) u.store.set('btnsize', e.target.value);
+      else u.store.remove('btnsize');
+      state.lastCols = PD.grid.columnsFor(state.config.appearance);
+      renderPage();
+      updateColsInfo();
     });
     $('btn-reload').addEventListener('click', function () { global.location.reload(); });
     $('btn-forget').addEventListener('click', function () {

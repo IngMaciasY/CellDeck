@@ -463,6 +463,47 @@ html[data-theme="light"] .overlay { background: rgba(238, 241, 246, 0.95); }
   75% { transform: translateX(6px); }
 }
 
+/* Firefox (Android): estilos equivalentes del slider */
+input[type="range"]::-moz-range-track { height: 10px; border-radius: 5px; background: var(--surface-3); }
+input[type="range"]::-moz-range-thumb {
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+/* ------------------------------------------------------ pantallas con notch
+ * Celulares nuevos con notch / bordes redondeados (viewport-fit=cover).
+ * Chrome 60 no entiende env(): ignora estas líneas y se queda con el valor anterior.
+ */
+.bar {
+  padding-top: env(safe-area-inset-top);
+  padding-left: calc(6px + env(safe-area-inset-left));
+  padding-right: calc(6px + env(safe-area-inset-right));
+  height: calc(52px + env(safe-area-inset-top));
+}
+.page {
+  padding-bottom: calc(var(--gap) + env(safe-area-inset-bottom));
+  padding-right: calc(var(--gap) + env(safe-area-inset-right));
+}
+.sheet { padding-bottom: calc(18px + env(safe-area-inset-bottom)); }
+@media (orientation: landscape) and (max-height: 600px) {
+  .bar {
+    height: auto;
+    width: calc(76px + env(safe-area-inset-left));
+    padding: 6px 0 6px env(safe-area-inset-left);
+  }
+}
+
+/* Pantallas grandes (tablets): tipografía algo mayor */
+@media (min-width: 720px) and (min-height: 720px) {
+  html, body { font-size: 17px; }
+  .key-label { font-size: 15px; }
+  .w-clock .time { font-size: 56px; }
+  .w-media .title { font-size: 22px; }
+}
+
 /* Vídeo anti-suspensión: presente en el DOM pero invisible */
 .nosleep-video {
   position: fixed;

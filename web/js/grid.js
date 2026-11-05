@@ -13,26 +13,53 @@
     return global.innerHeight >= global.innerWidth;
   }
 
-  /** Número de columnas según orientación y configuración. */
-  function columnsFor(appearance) {
+  /**
+   * Modo de distribución efectivo. Cada celular puede elegir en su menú un tamaño de
+   * botón propio (se guarda solo en ese dispositivo); si no, manda la config de la PC.
+   * @returns {{mode: string, size: number}}
+   */
+  function effectiveLayout(appearance) {
     const a = appearance || {};
-    return isPortrait() ? (a.columns_portrait || 3) : (a.columns_landscape || 6);
+    const local = parseInt(u.store.get('btnsize', ''), 10);
+    if (local > 0) return { mode: 'auto', size: local };
+    return { mode: a.layout === 'fixed' ? 'fixed' : 'auto', size: a.button_size || 104 };
   }
 
-  /** Ajusta el tamaño de celda para que los botones sean cuadrados. */
-  function layout(gridEl, appearance) {
-    const cols = columnsFor(appearance);
+  /** Mide el espacio disponible (si aún no está en pantalla, estima con la ventana). */
+  function metrics(gridEl) {
     const style = global.getComputedStyle(gridEl);
     const gap = parseFloat(style.getPropertyValue('--gap')) || 10;
-    // Si aún no está en pantalla (ancho 0) se estima con la ventana.
     const width = gridEl.clientWidth || (global.innerWidth - 2 * gap);
-    let cell = Math.floor((width - gap * (cols - 1)) / cols);
-    // En horizontal se limita para que quepan al menos 3 filas sin desplazarse.
-    if (!isPortrait()) {
-      const page = gridEl.parentNode;
-      const maxCell = Math.floor((page.clientHeight - gap * 4) / 3);
-      if (maxCell > 60) cell = Math.min(cell, maxCell);
+    const page = gridEl.parentNode;
+    const height = (page && page.clientHeight) || global.innerHeight;
+    // En horizontal: que quepan al menos 3 filas sin desplazarse.
+    const maxCell = isPortrait() ? 0 : Math.floor((height - gap * 4) / 3);
+    return { gap: gap, width: width, maxCell: maxCell > 60 ? maxCell : 0 };
+  }
+
+  /**
+   * Columnas para la pantalla actual.
+   * - auto: tantas como quepan del tamaño ideal → 3 en un celular vertical, 6-7 en
+   *   horizontal, 7-10 en una tablet. Sirve igual para un teléfono viejo o uno nuevo.
+   * - fixed: las de la config según la orientación.
+   */
+  function columnsFor(appearance, gridEl) {
+    const a = appearance || {};
+    const lay = effectiveLayout(a);
+    if (lay.mode === 'fixed') {
+      return isPortrait() ? (a.columns_portrait || 3) : (a.columns_landscape || 6);
     }
+    const m = metrics(gridEl || document.getElementById('grid'));
+    const size = m.maxCell ? Math.min(lay.size, m.maxCell) : lay.size;
+    return u.clamp(Math.floor((m.width + m.gap) / (size + m.gap)), 2, 12);
+  }
+
+  /** Ajusta columnas y tamaño de celda (botones cuadrados). Devuelve las columnas. */
+  function layout(gridEl, appearance) {
+    const cols = columnsFor(appearance, gridEl);
+    const m = metrics(gridEl);
+    let cell = Math.floor((m.width - m.gap * (cols - 1)) / cols);
+    if (m.maxCell) cell = Math.min(cell, m.maxCell);
     cell = Math.max(56, cell);
     gridEl.style.setProperty('--cols', String(cols));
     gridEl.style.setProperty('--cell', cell + 'px');
@@ -113,5 +140,11 @@
     widgets.forEach(function (w) { w.update(type, data); });
   }
 
-  global.PD.grid = { render: render, layout: layout, dispatch: dispatch, columnsFor: columnsFor };
+  global.PD.grid = {
+    render: render,
+    layout: layout,
+    dispatch: dispatch,
+    columnsFor: columnsFor,
+    effectiveLayout: effectiveLayout
+  };
 })(window);

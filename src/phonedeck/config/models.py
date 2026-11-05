@@ -89,6 +89,11 @@ class Page(_Model):
 class Appearance(_Model):
     theme: Literal["dark", "light", "oled"] = "dark"
     accent: str = Field(default="#4f8cff", pattern=HEX_COLOR)
+    # "auto": columnas calculadas con el ancho de cada pantalla y ``button_size``
+    #         (sirve igual para un celular viejo, uno nuevo o una tablet).
+    # "fixed": columnas fijas ``columns_portrait`` / ``columns_landscape``.
+    layout: Literal["auto", "fixed"] = "auto"
+    button_size: int = Field(default=104, ge=64, le=220, description="Tamaño ideal en px CSS")
     columns_portrait: int = Field(default=3, ge=2, le=8)
     columns_landscape: int = Field(default=6, ge=3, le=12)
     show_labels: bool = True
@@ -109,6 +114,14 @@ class Config(_Model):
                 raise ValueError(f"ID de página repetido: '{page.id}'")
             seen.add(page.id)
         return self
+
+    def has_widget(self, widget: str) -> bool:
+        """``True`` si algún widget de ese tipo existe en alguna página."""
+        return any(
+            isinstance(item, WidgetItem) and item.widget == widget
+            for page in self.pages
+            for item in page.items
+        )
 
     def find_page(self, page_id: str) -> Page | None:
         return next((p for p in self.pages if p.id == page_id), None)
