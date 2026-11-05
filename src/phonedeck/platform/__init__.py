@@ -34,7 +34,7 @@ def create_backend(fake: bool = False) -> PlatformBackend:
     if fake or sys.platform != "win32":
         if not fake:
             log.warning("Sistema no Windows: se usa el backend simulado")
-        return FakeBackend()
+        return FakeBackend(demo=True)
     from phonedeck.platform.windows import WindowsBackend
 
     return WindowsBackend()

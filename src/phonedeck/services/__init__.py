@@ -1,14 +1,19 @@
-"""Servicios en segundo plano que publican estado en vivo por WebSocket.
-
-En el hito (c) se añaden: ahora suena, volumen y CPU/RAM.
-"""
+"""Servicios en segundo plano que publican estado en vivo por WebSocket."""
 
 from __future__ import annotations
 
 from collections.abc import Callable, Coroutine
 from typing import TYPE_CHECKING, Any
 
+from phonedeck.services.now_playing import now_playing_service
+from phonedeck.services.stats import stats_service
+from phonedeck.services.volume import volume_service
+
 if TYPE_CHECKING:
     from phonedeck.state import AppState
 
-BACKGROUND_SERVICES: tuple[Callable[[AppState], Coroutine[Any, Any, None]], ...] = ()
+BACKGROUND_SERVICES: tuple[Callable[[AppState], Coroutine[Any, Any, None]], ...] = (
+    now_playing_service,
+    volume_service,
+    stats_service,
+)

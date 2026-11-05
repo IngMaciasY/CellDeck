@@ -21,6 +21,22 @@ from phonedeck.ws import WebSocketHub
 log = logging.getLogger(__name__)
 
 
+@dataclass(frozen=True, slots=True)
+class Artwork:
+    """Portada actual de "ahora suena" (se sirve en /api/media/artwork)."""
+
+    hash: str
+    data: bytes
+    mime: str
+
+
+@dataclass
+class LiveState:
+    """Estado en vivo compartido entre servicios y rutas."""
+
+    artwork: Artwork | None = None
+
+
 @dataclass
 class AppState:
     """Todo lo que necesitan las rutas y servicios. Se guarda en ``app.state.pd``."""
@@ -38,6 +54,7 @@ class AppState:
     mode: str
     version: str = __version__
     started_at: float = field(default_factory=time.time)
+    live: LiveState = field(default_factory=LiveState)
 
     @property
     def settings(self) -> Settings:
