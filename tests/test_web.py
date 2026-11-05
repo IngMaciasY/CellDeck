@@ -88,4 +88,13 @@ def test_default_config_icons_exist_in_frontend() -> None:
     config = json.loads(config_path.read_text(encoding="utf-8"))
     used = {p["icon"] for p in config["pages"] if "icon" in p}
     used |= {i["icon"] for p in config["pages"] for i in p["items"] if "icon" in i}
+    used.discard("app")  # especial: logotipo de la app extraído por la PC
     assert used <= available, f"Iconos sin dibujo: {sorted(used - available)}"
+
+
+def test_labels_are_not_hidden_globally() -> None:
+    """Regresión: solo `.no-labels` puede ocultar las etiquetas de los botones."""
+    css = (WEB / "css" / "app.css").read_text(encoding="utf-8")
+    assert not re.search(r"(?m)^\s*\.key-label\s*\{\s*display:\s*none", css)
+    assert ".no-labels .key-label { display: none; }" in css
+    assert len(re.findall(r"\.key-img\s*\{", css)) == 1
