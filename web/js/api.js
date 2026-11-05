@@ -75,6 +75,7 @@
     run: function (page, item, confirmed) {
       return request('POST', '/api/run', { page: page, item: item, confirmed: !!confirmed });
     },
-    plugins: function () { return request('GET', '/api/plugins'); }
+    plugins: function () { return request('GET', '/api/plugins'); },
+    apps: function () { return request('GET', '/api/apps'); }
   };
 })(window);

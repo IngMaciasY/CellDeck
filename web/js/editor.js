@@ -27,8 +27,14 @@
     revision: null,
     dirty: false,
     remoteChanged: false,
-    plugins: null
+    plugins: null,
+    apps: null
   };
+
+  /** Vista previa del icono: "Logo de la app" o el SVG correspondiente. */
+  function iconPreview(name) {
+    return name === 'app' ? u.el('span', 'icon-preview-app', 'Logo de la app') : icon(name || 'square');
+  }
 
   function clone(obj) {
     return JSON.parse(JSON.stringify(obj));
@@ -86,7 +92,9 @@
     }
     if (!E.plugins) {
       try {
-        E.plugins = (await api.plugins()).plugins;
+        const results = await Promise.all([api.plugins(), api.apps()]);
+        E.plugins = results[0].plugins;
+        E.apps = results[1].apps;
       } catch (err) {
         u.toast('No se pudieron cargar los tipos de acción: ' + err.message, 'error');
         return;
@@ -197,11 +205,24 @@
     const errorBox = u.el('p', 'error-text');
 
     if (item.kind === 'button') {
-      body.appendChild(F.field('Etiqueta', F.input(item.label, function (v) { item.label = v; },
-        { maxLength: 40, placeholder: 'Nombre del botón' })));
+      const labelInput = F.input(item.label, function (v) { item.label = v; },
+        { maxLength: 40, placeholder: 'Nombre del botón' });
+      body.appendChild(F.field('Etiqueta', labelInput));
       const actionBox = u.el('div', 'action-box');
       const types = F.actionTypes(E.plugins).filter(function (t) { return t[0] !== 'wait'; });
-      const ctx = { types: F.actionTypes(E.plugins) };
+      const knownNames = (E.apps || []).map(function (a) { return a.name; });
+      const ctx = {
+        types: F.actionTypes(E.plugins),
+        apps: E.apps,
+        // Al elegir una app: su nombre como etiqueta (si no se escribió otro) y su logotipo.
+        onAppChosen: function (app) {
+          if (!item.label || item.label === 'Nuevo' || knownNames.indexOf(item.label) >= 0) {
+            item.label = app.name;
+            labelInput.value = app.name;
+          }
+          setIcon('app');
+        }
+      };
       function renderAction() {
         actionBox.innerHTML = '';
         actionBox.appendChild(F.actionForm(item.action, ctx));
@@ -209,6 +230,10 @@
       body.appendChild(F.field('Qué hace', F.select(types, item.action.type, function (v) {
         item.action = F.defaults(v);
         renderAction();
+        if (v === 'app') {
+          const first = (E.apps || []).filter(function (a) { return a.id === item.action.app; })[0];
+          if (first) ctx.onAppChosen(first);
+        }
       })));
       body.appendChild(actionBox);
       renderAction();
@@ -244,15 +269,26 @@
     }
 
     // Apariencia del elemento
+    let setIcon = function () {};
     if (item.kind === 'button') {
       const iconField = u.el('details', 'collapsible');
       const summary = iconField.appendChild(u.el('summary', '', 'Icono'));
-      summary.appendChild(icon(item.icon || 'square'));
-      iconField.appendChild(F.iconPicker(item.icon || 'square', function (name) {
+      summary.appendChild(iconPreview(item.icon));
+      let picker = F.iconPicker(item.icon || 'square', function (name) {
         item.icon = name;
-        summary.removeChild(summary.lastChild);
-        summary.appendChild(icon(name));
-      }));
+        summary.replaceChild(iconPreview(name), summary.lastChild);
+      });
+      iconField.appendChild(picker);
+      setIcon = function (name) {
+        item.icon = name;
+        summary.replaceChild(iconPreview(name), summary.lastChild);
+        const fresh = F.iconPicker(name, function (n) {
+          item.icon = n;
+          summary.replaceChild(iconPreview(n), summary.lastChild);
+        });
+        iconField.replaceChild(fresh, picker);
+        picker = fresh;
+      };
       body.appendChild(iconField);
     }
     body.appendChild(F.field('Color', F.colorPicker(item.color, function (c) {

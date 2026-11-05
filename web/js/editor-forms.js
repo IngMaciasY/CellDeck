@@ -185,6 +185,16 @@
         b.classList.toggle('selected', b.getAttribute('data-icon') === current);
       });
     }
+    // Opción especial: logotipo oficial de la app (lo extrae la PC del programa instalado).
+    const appChoice = wrap.appendChild(u.el('button', 'icon-choice icon-choice-app', 'Logo de la app'));
+    appChoice.type = 'button';
+    appChoice.setAttribute('data-icon', 'app');
+    appChoice.addEventListener('click', function (e) {
+      e.preventDefault();
+      current = 'app';
+      paint();
+      onChange('app');
+    });
     PD.icons.names.forEach(function (name) {
       const b = wrap.appendChild(u.el('button', 'icon-choice'));
       b.type = 'button';
@@ -245,7 +255,8 @@
     ['logoff', 'Cerrar sesión ⚠']];
 
   /** Orden y nombres de los tipos incluidos (los externos se añaden detrás). */
-  const BUILTIN_TYPES = [['media', 'Multimedia'], ['volume', 'Volumen'], ['launch', 'Abrir programa / carpeta'],
+  const BUILTIN_TYPES = [['media', 'Multimedia'], ['volume', 'Volumen'], ['app', 'Abrir aplicación instalada'],
+    ['launch', 'Abrir programa / carpeta'],
     ['url', 'Abrir web / URI'], ['keys', 'Atajo de teclado / texto'], ['macro', 'Macro (varios pasos)'],
     ['system', 'Sistema'], ['wait', 'Esperar']];
 
@@ -253,6 +264,7 @@
     switch (type) {
       case 'media': return { type: type, command: 'play_pause' };
       case 'volume': return { type: type, op: 'step', value: 5 };
+      case 'app': return { type: type, app: 'steam' };
       case 'launch': return { type: type, path: '' };
       case 'url': return { type: type, url: 'https://' };
       case 'keys': return { type: type, combo: 'ctrl+c' };
@@ -299,6 +311,20 @@
   }
 
   const FORMS = {
+    app: function (a, ctx) {
+      const apps = ctx.apps || [];
+      const options = apps.map(function (app) {
+        return [app.id, app.name + (app.installed ? '  ✓' : '  (no encontrada en esta PC)')];
+      });
+      if (!options.length) options.push([a.app, a.app]);
+      return field('Aplicación', select(options, a.app, function (v) {
+        a.app = v;
+        const app = apps.filter(function (x) { return x.id === v; })[0];
+        if (app && ctx.onAppChosen) ctx.onAppChosen(app);
+      }), 'PhoneDeck la busca donde Windows la tenga instalada (registro, accesos, carpetas): ' +
+        'no hace falta escribir la ruta. ✓ = encontrada en esta PC.');
+    },
+
     media: function (a) {
       return field('Acción', select(MEDIA, a.command, function (v) { a.command = v; }),
         'Teclas multimedia de Windows: funcionan con Spotify, el navegador y casi cualquier reproductor.');

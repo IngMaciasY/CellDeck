@@ -71,7 +71,36 @@
     widgets.forEach(function (w) { if (w.resize) w.resize(); });
   }
 
-  function createButton(item, onPress) {
+  // Icono genérico si no se puede mostrar el logotipo de la app (no instalada, sin red...).
+  const APP_FALLBACK = { steam: 'gamepad', epic: 'gamepad', visualstudio: 'code', vscode: 'code', brave: 'globe' };
+
+  function fallbackIcon(item) {
+    const action = item.action || {};
+    if (action.type === 'app') return APP_FALLBACK[action.app] || 'square';
+    if (action.type === 'url') return 'globe';
+    if (action.type === 'launch') return 'folder';
+    return 'square';
+  }
+
+  /**
+   * Logotipo oficial de la app (extraído por la PC del .exe instalado). La URL lleva la
+   * revisión de la config para que el navegador la cachee; si falla, icono genérico.
+   */
+  function appIcon(item, ctx) {
+    const img = document.createElement('img');
+    img.className = 'key-img';
+    img.alt = '';
+    img.setAttribute('draggable', 'false');
+    img.onerror = function () {
+      if (img.parentNode) img.parentNode.replaceChild(icon(fallbackIcon(item)), img);
+    };
+    img.src = '/api/icon/' + encodeURIComponent(ctx.pageId) + '/' + encodeURIComponent(item.id) +
+      '?v=' + encodeURIComponent(ctx.revision || '') +
+      '&token=' + encodeURIComponent(global.PD.api.getToken() || '');
+    return img;
+  }
+
+  function createButton(item, onPress, ctx) {
     const btn = u.el('button', 'key');
     btn.type = 'button';
     btn.setAttribute('data-id', item.id);
@@ -79,7 +108,7 @@
       btn.style.background = item.color;
       if (u.isLightColor(item.color)) btn.classList.add('dark-text');
     }
-    btn.appendChild(icon(item.icon || 'square'));
+    btn.appendChild(item.icon === 'app' ? appIcon(item, ctx) : icon(item.icon || 'square'));
     const label = u.el('span', 'key-label', item.label || '');
     btn.appendChild(label);
     if (item.label) btn.setAttribute('aria-label', item.label);
@@ -128,7 +157,8 @@
         widgets.push(widget);
         node = widget.el;
       } else {
-        node = createButton(item, edit ? function () { edit.onSelect(item); } : handlers.onPress);
+        node = createButton(item, edit ? function () { edit.onSelect(item); } : handlers.onPress,
+          { pageId: page.id, revision: handlers.revision });
       }
       const w = Math.min(item.w || 1, cols);
       const h = item.h || 1;

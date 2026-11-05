@@ -231,6 +231,19 @@ svg.icon {
   max-width: 64px;
   max-height: 64px;
 }
+/* Logotipo de la app: los iconos de Windows traen margen transparente propio, así que
+   se muestran algo más grandes que los SVG para que el tamaño visual sea el mismo. */
+.key-img {
+  display: block;
+  width: 44%;
+  height: 44%;
+  min-width: 28px;
+  min-height: 28px;
+  max-width: 72px;
+  max-height: 72px;
+  object-fit: contain;
+  pointer-events: none;
+}
 .key-label {
   display: block;
   max-width: 100%;

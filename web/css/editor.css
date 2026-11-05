@@ -193,3 +193,7 @@ textarea.input { resize: vertical; font-family: Consolas, "Roboto Mono", monospa
   background: var(--surface-2);
 }
 .add-choice svg.icon { width: 30px; height: 30px; margin-bottom: 6px; }
+
+/* Opción "Logo de la app" del selector de iconos */
+.icon-choice-app { width: auto; min-width: 102px; padding: 0 10px; font-size: 12px; line-height: 1.2; }
+.icon-preview-app { margin-left: auto; color: var(--accent); font-size: 13px; }

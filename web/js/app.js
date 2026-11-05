@@ -86,6 +86,7 @@
     PD.grid.render($('grid'), page, state.config.appearance, {
       onPress: onButtonPress,
       widgetCtx: { send: sendLive, snapshot: state.snapshot },
+      revision: state.revision,
       edit: editing ? PD.editor.gridHandlers() : null
     });
     updateSubscription();
