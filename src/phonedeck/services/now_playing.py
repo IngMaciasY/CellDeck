@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import asyncio
+import io
 import re
 import time
 from typing import Any
@@ -12,6 +14,8 @@ from phonedeck.state import Artwork
 
 # Si la posición real se aleja más que esto de la estimada, se reenvía (el usuario buscó).
 SEEK_THRESHOLD_S = 3.0
+# Lado máximo de la portada enviada al celular (el widget la muestra a <= 160 px CSS).
+ARTWORK_MAX_PX = 320
 
 
 def sniff_image_mime(data: bytes) -> str:
@@ -24,6 +28,36 @@ def sniff_image_mime(data: bytes) -> str:
     if data[:6] in (b"GIF87a", b"GIF89a"):
         return "image/gif"
     return "image/jpeg"
+
+
+def optimize_artwork(data: bytes) -> tuple[bytes, str]:
+    """Reduce la portada a JPEG de como mucho ``ARTWORK_MAX_PX`` px.
+
+    Windows suele entregar PNG de ~30 KB; un JPEG de 320 px pesa bastante menos y lo
+    entiende cualquier navegador (WebP no funciona en iPhone antiguos). Si el resultado
+    no es más pequeño o la imagen no se puede leer, se conserva el original.
+    """
+    from PIL import Image, UnidentifiedImageError
+
+    original_mime = sniff_image_mime(data)
+    try:
+        with Image.open(io.BytesIO(data)) as src:
+            src.load()
+            img: Image.Image = src
+            if img.mode not in ("RGB", "L"):
+                # Fondo oscuro como el del panel para las portadas con transparencia.
+                background = Image.new("RGB", img.size, (26, 29, 36))
+                background.paste(img, mask=img.convert("RGBA").split()[-1])
+                img = background
+            img.thumbnail((ARTWORK_MAX_PX, ARTWORK_MAX_PX), Image.Resampling.LANCZOS)
+            out = io.BytesIO()
+            img.convert("RGB").save(out, format="JPEG", quality=82, optimize=True, progressive=True)
+    except (UnidentifiedImageError, OSError, ValueError):
+        return data, original_mime
+    optimized = out.getvalue()
+    if len(optimized) >= len(data):
+        return data, original_mime
+    return optimized, "image/jpeg"
 
 
 def friendly_app_name(app_id: str) -> str:
@@ -53,6 +87,7 @@ def media_payload(info: MediaInfo | None) -> dict[str, Any] | None:
 
 class NowPlayingService(Poller):
     name = "now_playing"
+    topic = "media"
     interval = 1.0
     idle_interval = 4.0
 
@@ -77,9 +112,9 @@ class NowPlayingService(Poller):
         if info is not None and info.artwork and info.artwork_hash:
             current = self.state.live.artwork
             if current is None or current.hash != info.artwork_hash:
-                self.state.live.artwork = Artwork(
-                    info.artwork_hash, info.artwork, sniff_image_mime(info.artwork)
-                )
+                # Una vez por canción, en otro hilo (Pillow no debe bloquear el bucle).
+                data, mime = await asyncio.to_thread(optimize_artwork, info.artwork)
+                self.state.live.artwork = Artwork(info.artwork_hash, data, mime)
         payload = media_payload(info)
         key = (
             None
