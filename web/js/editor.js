@@ -566,11 +566,8 @@
     };
   }
 
+  /** Se llama una vez, cuando app.js termina de cargar este archivo bajo demanda. */
   function init() {
-    $('btn-edit').appendChild(icon('pencil'));
-    $('btn-edit').addEventListener('click', function () {
-      if (E.active) cancel(); else enter();
-    });
     $('ed-save').addEventListener('click', function () { save(false); });
     $('ed-cancel').addEventListener('click', cancel);
     $('ed-page').addEventListener('click', pageEditor);
@@ -586,6 +583,7 @@
 
   PD.editor = {
     init: init,
+    toggle: function () { if (E.active) cancel(); else enter(); },
     isActive: function () { return E.active; },
     isDragging: function () { return !!drag; },
     gridHandlers: gridHandlers,

@@ -15,24 +15,54 @@
   // ----------------------------------------------------------------- reloj
   const clocks = [];
   let clockTimer = null;
+  let dateCache = { day: -1, text: '' };
 
   function pad(n) { return (n < 10 ? '0' : '') + n; }
 
+  /** La fecha larga (toLocaleDateString es costoso) se calcula una vez al día. */
+  function dateText(now) {
+    if (dateCache.day !== now.getDate()) {
+      let text;
+      try {
+        text = now.toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' });
+        text = text.charAt(0).toUpperCase() + text.slice(1);   // solo la primera letra
+      } catch (e) {
+        text = now.toDateString();
+      }
+      dateCache = { day: now.getDate(), text: text };
+    }
+    return dateCache.text;
+  }
+
   function tickClocks() {
     const now = new Date();
-    let date;
-    try {
-      date = now.toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' });
-      date = date.charAt(0).toUpperCase() + date.slice(1);   // solo la primera letra
-    } catch (e) {
-      date = now.toDateString();
-    }
+    const date = dateText(now);
+    let anySeconds = false;
     clocks.forEach(function (c) {
       let time = pad(now.getHours()) + ':' + pad(now.getMinutes());
-      if (c.seconds) time += ':' + pad(now.getSeconds());
-      c.time.textContent = time;
-      c.date.textContent = date;
+      if (c.seconds) {
+        time += ':' + pad(now.getSeconds());
+        anySeconds = true;
+      }
+      u.setText(c.time, time);
+      u.setText(c.date, date);
     });
+    scheduleClocks(now, anySeconds);
+  }
+
+  /**
+   * Despierta justo en el cambio de minuto (o de segundo si algún reloj muestra segundos)
+   * en vez de cada segundo: menos trabajo y la hora cambia en el instante exacto.
+   */
+  function scheduleClocks(now, everySecond) {
+    clearTimeout(clockTimer);
+    if (!clocks.length) {
+      clockTimer = null;
+      return;
+    }
+    const ms = now.getMilliseconds();
+    const delay = everySecond ? 1000 - ms : (60 - now.getSeconds()) * 1000 - ms;
+    clockTimer = setTimeout(tickClocks, delay + 20);
   }
 
   function createClock(item) {
@@ -43,15 +73,14 @@
       seconds: !!(item.options && item.options.seconds)
     };
     clocks.push(entry);
-    if (!clockTimer) clockTimer = setInterval(tickClocks, 1000);
-    tickClocks();
+    tickClocks();   // pinta ya y reprograma el temporizador compartido
     return {
       el: el,
       update: function () {},
       destroy: function () {
         clocks.splice(clocks.indexOf(entry), 1);
         if (!clocks.length) {
-          clearInterval(clockTimer);
+          clearTimeout(clockTimer);
           clockTimer = null;
         }
       }
@@ -66,13 +95,18 @@
     const value = head.appendChild(u.el('span', 'muted', '—'));
     const bar = root.appendChild(u.el('div', 'meter-bar'));
     const fill = bar.appendChild(u.el('div', 'meter-fill'));
+    let last = -1;
     return {
       root: root,
       set: function (percent, text) {
         const p = u.clamp(Math.round(percent), 0, 100);
-        fill.style.width = p + '%';
-        fill.className = 'meter-fill' + (p >= 90 ? ' critical' : p >= 70 ? ' high' : '');
-        value.textContent = text || (p + '%');
+        u.setText(value, text || (p + '%'));
+        if (p === last) return;
+        last = p;
+        // transform (no width): la animación la hace la GPU sin recalcular la disposición.
+        fill.style.transform = 'scaleX(' + (p / 100) + ')';
+        const cls = 'meter-fill' + (p >= 90 ? ' critical' : p >= 70 ? ' high' : '');
+        if (fill.className !== cls) fill.className = cls;
       }
     };
   }
@@ -134,27 +168,48 @@
     }
 
     let state = null;
+    let lastJson = '';
     let receivedAt = 0;
     let lastArt = null;
-    const timer = setInterval(renderProgress, 1000);
+    let lastPlayIcon = '';
+    let lastScale = '';
+    let timer = null;
 
     function renderProgress() {
-      if (!state || !state.duration) {
-        fill.style.width = '0';
-        return;
+      let scale = 0;
+      if (state && state.duration) {
+        let pos = state.position || 0;
+        if (state.status === 'playing') pos += (Date.now() - receivedAt) / 1000;
+        scale = u.clamp(pos / state.duration, 0, 1);
       }
-      let pos = state.position || 0;
-      if (state.status === 'playing') pos += (Date.now() - receivedAt) / 1000;
-      fill.style.width = u.clamp(pos / state.duration * 100, 0, 100) + '%';
+      const value = 'scaleX(' + scale.toFixed(4) + ')';
+      if (value !== lastScale) {
+        lastScale = value;
+        fill.style.transform = value;
+      }
+    }
+
+    /** El temporizador del progreso solo corre mientras suena algo con duración conocida. */
+    function syncTimer() {
+      const needed = !!(state && state.status === 'playing' && state.duration);
+      if (needed && !timer) timer = setInterval(renderProgress, 1000);
+      if (!needed && timer) {
+        clearInterval(timer);
+        timer = null;
+      }
     }
 
     function update(type, data) {
       if (type !== 'media') return;
+      const json = JSON.stringify(data);
+      if (json === lastJson) return;   // mensaje repetido (p. ej. snapshot al resuscribirse)
+      lastJson = json;
       state = data;
       receivedAt = Date.now();
+      syncTimer();
       if (!data || (!data.title && !data.artist)) {
-        title.textContent = 'Nada sonando';
-        artist.textContent = '';
+        u.setText(title, 'Nada sonando');
+        u.setText(artist, '');
         art.style.backgroundImage = '';
         art.classList.remove('has-art');
         lastArt = null;
@@ -162,9 +217,9 @@
         renderProgress();
         return;
       }
-      title.textContent = data.title || 'Sin título';
+      u.setText(title, data.title || 'Sin título');
       // Artista · app de origen (Spotify, Brave...): útil si suenan varias cosas.
-      artist.textContent = [data.artist, data.app].filter(Boolean).join(' · ');
+      u.setText(artist, [data.artist, data.app].filter(Boolean).join(' · '));
       el.classList.toggle('paused', data.status !== 'playing');
       const url = safeArtworkUrl(data.artwork);
       if (url !== lastArt) {
@@ -172,9 +227,11 @@
         art.style.backgroundImage = url ? 'url("' + url.replace(/"/g, '%22') + '")' : '';
         art.classList.toggle('has-art', !!url);
       }
-      if (playBtn) {
+      const playIcon = data.status === 'playing' ? 'pause' : 'play';
+      if (playBtn && playIcon !== lastPlayIcon) {
+        lastPlayIcon = playIcon;
         playBtn.innerHTML = '';
-        playBtn.appendChild(icon(data.status === 'playing' ? 'pause' : 'play'));
+        playBtn.appendChild(icon(playIcon));
       }
       renderProgress();
     }
@@ -192,7 +249,7 @@
       el: el,
       update: update,
       resize: resize,
-      destroy: function () { clearInterval(timer); }
+      destroy: function () { if (timer) clearInterval(timer); }
     };
   }
 
@@ -220,16 +277,22 @@
       ctx.send('volume.set', { value: level });
     }, 80);
 
+    let lastIcon = 'volume-2';
+
+    /** Redibuja el icono solo si cambia (al arrastrar llegan decenas de eventos/s). */
     function setIcon(level) {
+      const name = muted || level === 0 ? 'volume-x' : level < 50 ? 'volume-1' : 'volume-2';
+      if (name === lastIcon) return;
+      lastIcon = name;
       muteBtn.innerHTML = '';
-      muteBtn.appendChild(icon(muted || level === 0 ? 'volume-x' : level < 50 ? 'volume-1' : 'volume-2'));
+      muteBtn.appendChild(icon(name));
     }
 
     slider.addEventListener('input', function () {
       dragging = true;
       clearTimeout(releaseTimer);
       const level = parseInt(slider.value, 10);
-      value.textContent = level + '%';
+      u.setText(value, level + '%');
       setIcon(level);
       sendLevel(level);
     });
@@ -249,8 +312,8 @@
         muted = !!data.muted;
         el.classList.toggle('muted', muted);
         if (!dragging) {
-          slider.value = String(data.level);
-          value.textContent = data.level + '%';
+          if (slider.value !== String(data.level)) slider.value = String(data.level);
+          u.setText(value, data.level + '%');
         }
         setIcon(parseInt(slider.value, 10));
       },

@@ -88,6 +88,33 @@
       widgetCtx: { send: sendLive, snapshot: state.snapshot },
       edit: editing ? PD.editor.gridHandlers() : null
     });
+    updateSubscription();
+  }
+
+  // ------------------------------------------------- suscripción a datos en vivo
+  const WIDGET_TOPICS = { now_playing: 'media', volume: 'volume', stats: 'stats' };
+
+  /** Temas en vivo que necesita la página visible (según sus widgets). */
+  function topicsForPage(page) {
+    const topics = [];
+    ((page && page.items) || []).forEach(function (item) {
+      const topic = item.kind === 'widget' ? WIDGET_TOPICS[item.widget] : null;
+      if (topic && topics.indexOf(topic) < 0) topics.push(topic);
+    });
+    return topics.sort();
+  }
+
+  /**
+   * Pide a la PC solo los datos de los widgets visibles: menos mensajes que procesar en
+   * el celular y la PC deja de consultar a Windows lo que nadie mira.
+   */
+  function updateSubscription(force) {
+    const topics = topicsForPage(currentPage());
+    const key = topics.join(',');
+    if (!force && key === state.subscribed) return;
+    if (state.connection && state.connection.send('subscribe', { topics: topics })) {
+      state.subscribed = key;
+    }
   }
 
   function renderAll() {
@@ -266,8 +293,13 @@
     setConn(status);
     if (status === 'online') {
       setOverlay(false);
-      // Puede haber cambiado la config mientras estábamos desconectados.
-      api.getConfig().then(receiveConfig, function () { /* se reintentará al reconectar */ });
+      updateSubscription(true);
+      // Tras una reconexión la config pudo cambiar. En la primera conexión no hace falta:
+      // se acaba de descargar en start() (evita una petición duplicada al abrir).
+      if (state.hadConnection) {
+        api.getConfig().then(receiveConfig, function () { /* se reintentará al reconectar */ });
+      }
+      state.hadConnection = true;
     } else if (status === 'offline' && state.config) {
       setOverlay(true, 'Se perdió la conexión con la PC', reconnectHint(), true);
     }
@@ -580,8 +612,70 @@
     state.lastCols = PD.grid.columnsFor(state.config.appearance);
     setOverlay(false);
     if (state.connection) state.connection.stop();
+    state.hadConnection = false;
+    state.subscribed = null;
     state.connection = new PD.Connection(onLiveMessage, onConnState);
     state.connection.start(api.getToken());
+  }
+
+  // ------------------------------------------------- carga diferida del editor
+  /** URL con la misma versión (?v=) que el resto de recursos de la página. */
+  function versioned(path) {
+    const v = document.documentElement.getAttribute('data-v');
+    return v ? path + '?v=' + encodeURIComponent(v) : path;
+  }
+
+  function loadScript(src) {
+    return new Promise(function (resolve, reject) {
+      const s = document.createElement('script');
+      s.src = versioned(src);
+      s.onload = resolve;
+      s.onerror = function () { reject(new Error('No se pudo cargar ' + src)); };
+      document.head.appendChild(s);
+    });
+  }
+
+  function loadStyle(href) {
+    return new Promise(function (resolve, reject) {
+      const l = document.createElement('link');
+      l.rel = 'stylesheet';
+      l.href = versioned(href);
+      l.onload = resolve;
+      l.onerror = function () { reject(new Error('No se pudo cargar ' + href)); };
+      document.head.appendChild(l);
+    });
+  }
+
+  let editorLoading = null;
+
+  /**
+   * El editor (~40 KB de JS + CSS) solo se descarga la primera vez que se toca el lápiz:
+   * la mayoría de las veces el panel se usa sin editar.
+   */
+  function ensureEditor() {
+    if (PD.editor) return Promise.resolve();
+    if (!editorLoading) {
+      editorLoading = Promise.all([loadStyle('css/editor.css'), loadScript('js/editor-forms.js')])
+        .then(function () { return loadScript('js/editor.js'); })
+        .then(function () { PD.editor.init(); })
+        .catch(function (err) {
+          editorLoading = null;
+          throw err;
+        });
+    }
+    return editorLoading;
+  }
+
+  function onEditClick() {
+    const btn = $('btn-edit');
+    btn.disabled = true;
+    ensureEditor().then(function () {
+      btn.disabled = false;
+      PD.editor.toggle();
+    }, function (err) {
+      btn.disabled = false;
+      u.toast(err.message, 'error');
+    });
   }
 
   function registerServiceWorker() {
@@ -592,7 +686,8 @@
 
   function init() {
     api.onUnauthorized(handleUnauthorized);
-    PD.editor.init();
+    $('btn-edit').appendChild(PD.icons.icon('pencil'));
+    $('btn-edit').addEventListener('click', onEditClick);
     bindMenu();
     bindSwipe();
     updateFullscreenIcon();

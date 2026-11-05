@@ -207,6 +207,7 @@ svg.icon {
 /* --------------------------------------------------------------- botones */
 .key {
   position: relative;
+  contain: layout style;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -263,6 +264,7 @@ svg.icon {
 /* --------------------------------------------------------------- widgets */
 .widget {
   position: relative;
+  contain: layout style paint;   /* un cambio dentro no obliga a recalcular el resto */
   min-width: 0;
   padding: 12px 14px;
   border-radius: var(--radius);
@@ -280,7 +282,15 @@ svg.icon {
 .meter { margin: 5px 0; }
 .meter-head { display: flex; justify-content: space-between; font-size: 13px; }
 .meter-bar { height: 8px; margin-top: 4px; border-radius: 4px; background: var(--surface-3); overflow: hidden; }
-.meter-fill { height: 100%; width: 0; border-radius: 4px; background: var(--accent); transition: width 0.6s ease; }
+/* Se anima con transform (GPU), no con width: así no se recalcula la disposición. */
+.meter-fill {
+  height: 100%;
+  border-radius: 4px;
+  background: var(--accent);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.6s ease;
+}
 .meter-fill.high { background: var(--warn); }
 .meter-fill.critical { background: var(--err); }
 
@@ -303,7 +313,8 @@ svg.icon {
 .w-media .title { font-size: 18px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .w-media .artist { margin-top: 2px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .w-media .progress { height: 4px; margin-top: 10px; border-radius: 2px; background: var(--surface-3); overflow: hidden; }
-.w-media .progress-fill { height: 100%; width: 0; background: var(--accent); }
+/* Sin transición: una animación continua costaría CPU en celulares sin aceleración gráfica. */
+.w-media .progress-fill { height: 100%; background: var(--accent); transform: scaleX(0); transform-origin: left center; }
 .w-media .controls { display: flex; margin-top: 8px; }
 .w-media .controls .icon-btn { width: 48px; height: 48px; margin-right: 6px; background: var(--surface-2); }
 .w-media .controls .icon-btn.main { background: var(--accent); color: #fff; }
@@ -514,196 +525,3 @@ input[type="range"]::-moz-range-thumb {
   opacity: 0.01;
   pointer-events: none;
 }
-
-/* ================================================================ editor */
-.edit-bar {
-  position: -webkit-sticky;
-  position: sticky;
-  top: calc(-1 * var(--gap));
-  z-index: 3;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  margin: calc(-1 * var(--gap)) calc(-1 * var(--gap)) var(--gap);
-  padding: 8px var(--gap);
-  background: var(--surface);
-  border-bottom: 2px solid var(--accent);
-}
-.edit-status { margin: 4px 8px 4px 0; color: var(--accent); font-weight: 500; font-size: 14px; }
-.edit-actions { display: flex; flex-wrap: wrap; margin: -3px; }
-.edit-actions .btn { flex: none; margin: 3px; }
-
-.btn-small { min-height: 38px; padding: 0 12px; font-size: 14px; }
-.btn-primary { background: var(--accent); color: #fff; }
-.btn:disabled { opacity: 0.45; }
-.btn svg.icon { width: 18px; height: 18px; vertical-align: -4px; }
-
-/* Elementos del grid en modo edición */
-.editing .edit-item { outline: 2px dashed rgba(255, 255, 255, 0.28); outline-offset: -2px; }
-html[data-theme="light"] .editing .edit-item { outline-color: rgba(0, 0, 0, 0.25); }
-.edit-overlay { position: absolute; top: 0; right: 0; bottom: 0; left: 0; z-index: 2; cursor: pointer; }
-.drag-handle {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  z-index: 3;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 10px;
-  background: rgba(0, 0, 0, 0.45);
-  color: #fff;
-  touch-action: none;   /* el arrastre no hace scroll */
-  cursor: grab;
-}
-.drag-handle svg.icon { width: 20px; height: 20px; }
-.edit-item.dragging { opacity: 0.45; transform: scale(0.95); pointer-events: none; }
-.drag-active { cursor: grabbing; }
-.add-tile { border: 2px dashed var(--surface-3); background: transparent; color: var(--muted); box-shadow: none; }
-
-/* Ventanas modales */
-.modal-backdrop {
-  position: fixed;
-  top: 0; right: 0; bottom: 0; left: 0;
-  background: rgba(0, 0, 0, 0.55);
-}
-.modal {
-  position: fixed;
-  top: 0; right: 0; bottom: 0; left: 0;
-  display: flex;
-  flex-direction: column;
-  max-width: 560px;
-  margin: 0 auto;
-  background: var(--surface);
-  animation: fade-in 0.15s ease-out;
-}
-@media (min-width: 600px) and (min-height: 600px) {
-  .modal { top: 5%; bottom: 5%; border-radius: 18px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5); }
-}
-.modal-head {
-  display: flex;
-  align-items: center;
-  flex: none;
-  padding: 6px 6px 6px 16px;
-  border-bottom: 1px solid var(--surface-2);
-}
-.modal-head h2 { flex: 1; margin: 0; font-size: 18px; font-weight: 500; }
-.modal-body { flex: 1; padding: 12px 16px; overflow-y: auto; -webkit-overflow-scrolling: touch; -webkit-user-select: text; user-select: text; }
-.modal-foot {
-  display: flex;
-  flex: none;
-  padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
-  border-top: 1px solid var(--surface-2);
-}
-.modal-foot .btn { margin: 0 4px; }
-
-/* Campos */
-.field { display: block; margin: 0 0 14px; }
-.field-label { display: block; margin-bottom: 6px; color: var(--muted); font-size: 13px; }
-.field-hint { display: block; margin-top: 5px; color: var(--muted); font-size: 12px; line-height: 1.4; }
-.input {
-  display: block;
-  width: 100%;
-  min-height: 44px;
-  padding: 10px 12px;
-  border: 1px solid var(--surface-3);
-  border-radius: 10px;
-  background: var(--bg);
-  color: var(--text);
-  font-size: 16px;   /* 16px evita el zoom automático de iOS */
-}
-textarea.input { resize: vertical; font-family: Consolas, "Roboto Mono", monospace; font-size: 14px; }
-.input:focus { outline: none; border-color: var(--accent); }
-.check { display: flex; align-items: center; min-height: 44px; margin-bottom: 8px; }
-.check input { width: 22px; height: 22px; margin: 0 10px 0 0; }
-.error-text { color: var(--err); font-size: 14px; }
-.error-list { padding-left: 20px; color: var(--err); }
-
-.chips { display: flex; flex-wrap: wrap; margin: -3px -3px 12px; }
-.chip {
-  margin: 3px;
-  padding: 7px 12px;
-  border: 1px solid var(--surface-3);
-  border-radius: 16px;
-  background: var(--surface-2);
-  font-size: 13px;
-}
-
-.stepper { display: flex; align-items: center; }
-.stepper .icon-btn { background: var(--surface-2); font-size: 22px; }
-.stepper-value { width: 44px; text-align: center; font-size: 18px; }
-.size-row { display: flex; flex-wrap: wrap; }
-.size-row .field { margin-right: 24px; }
-
-.collapsible { margin-bottom: 14px; border: 1px solid var(--surface-2); border-radius: 12px; }
-.collapsible summary { display: flex; align-items: center; justify-content: space-between; padding: 12px; cursor: pointer; }
-.collapsible summary svg.icon { margin-left: auto; }
-
-.icon-picker { display: flex; flex-wrap: wrap; padding: 6px; }
-.icon-choice {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 48px;
-  height: 48px;
-  margin: 3px;
-  border: 2px solid transparent;
-  border-radius: 12px;
-  background: var(--surface-2);
-}
-.icon-choice.selected { border-color: var(--accent); background: var(--surface-3); }
-
-.swatches { display: flex; flex-wrap: wrap; margin: -4px -4px 8px; }
-.swatch {
-  width: 38px;
-  height: 38px;
-  margin: 4px;
-  border: 2px solid rgba(255, 255, 255, 0.15);
-  border-radius: 50%;
-}
-.swatch.selected { box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--accent); }
-.swatch.none {
-  background: linear-gradient(135deg, transparent 45%, var(--err) 45%, var(--err) 55%, transparent 55%), var(--surface-2);
-}
-.color-picker .hex { max-width: 140px; }
-
-.action-box { margin: 0 0 6px; padding: 12px; border-radius: 12px; background: var(--surface-2); }
-.action-box .input { background: var(--surface); }
-.macro-step { margin-bottom: 10px; padding: 10px; border-radius: 10px; background: var(--surface); }
-.macro-step .action-box, .macro-step .input { background: var(--bg); }
-.macro-step-head { display: flex; align-items: center; margin-bottom: 8px; }
-.macro-step-head select { flex: 1; min-width: 0; margin: 0 6px; }
-.macro-step-head .icon-btn { width: 38px; height: 38px; }
-.macro-step-head .icon-btn:disabled { opacity: 0.3; }
-.macro-step-num {
-  flex: none;
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  background: var(--accent);
-  color: #fff;
-  font-size: 13px;
-  line-height: 26px;
-  text-align: center;
-}
-
-.item-tools { display: flex; flex-wrap: wrap; margin: 6px -4px 10px; }
-.item-tools .btn { flex: 1 1 40%; margin: 4px; }
-
-.add-choices { display: flex; flex-wrap: wrap; margin: -5px; }
-.add-choice {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  flex: 1 1 40%;
-  min-height: 92px;
-  margin: 5px;
-  border: 0;
-  border-radius: 14px;
-  background: var(--surface-2);
-}
-.add-choice svg.icon { width: 30px; height: 30px; margin-bottom: 6px; }

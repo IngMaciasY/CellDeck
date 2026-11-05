@@ -107,6 +107,15 @@
     }, ms || (type === 'error' ? 4000 : 2200));
   }
 
+  /**
+   * Cambia el texto solo si es distinto. Reasignar el mismo texto también crea un nodo
+   * nuevo y obliga al navegador a recalcular estilos/disposición (caro en un celular viejo).
+   */
+  function setText(node, text) {
+    const value = String(text);
+    if (node.textContent !== value) node.textContent = value;
+  }
+
   function show(node, visible) {
     if (node) node.classList.toggle('hidden', !visible);
   }
@@ -121,6 +130,7 @@
     formatTime: formatTime,
     isLightColor: isLightColor,
     toast: toast,
+    setText: setText,
     show: show
   };
 })(window);
