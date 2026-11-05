@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Build (PyInstaller)
+build/
+dist/
+*.spec.bak
+
+# Node / bun (solo herramientas de lint del frontend)
+node_modules/
+
+# Datos locales de PhoneDeck (nunca subir: contienen PIN y secreto)
+settings.json
+config.json
+!src/phonedeck/config/default_config.json
+backups/
+logs/
+*.log
+
+# Editores / SO
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+.DS_Store
