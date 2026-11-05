@@ -12,6 +12,7 @@ from collections.abc import Sequence
 from typing import Any
 
 from phonedeck.platform.base import (
+    AppLocation,
     MediaInfo,
     MediaKey,
     PlatformError,
@@ -40,6 +41,9 @@ class FakeBackend:
         self.volume = VolumeState(level=50, muted=False)
         self.now_playing: MediaInfo | None = None
         self.fail_with: str | None = None  # si se fija, la siguiente llamada falla
+        # Apps "instaladas" e iconos simulados (los tests los rellenan).
+        self.apps: dict[str, AppLocation] = {}
+        self.icons: dict[str, bytes] = {}
         # Modo demo (``--fake``): una "canción" que avanza y responde a los controles.
         self.demo = demo
         self._demo_track = 0
@@ -121,6 +125,15 @@ class FakeBackend:
 
     async def system_command(self, command: SystemCommand) -> None:
         self._record("system_command", command)
+
+    async def find_app(self, app_id: str) -> AppLocation | None:
+        return self.apps.get(app_id)
+
+    def forget_app(self, app_id: str) -> None:
+        self.calls.append(("forget_app", (app_id,)))
+
+    async def target_icon(self, target: str, size: int = 160) -> bytes | None:
+        return self.icons.get(target)
 
     async def close(self) -> None:
         self.calls.append(("close", ()))

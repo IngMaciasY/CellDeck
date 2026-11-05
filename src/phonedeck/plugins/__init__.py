@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from phonedeck.plugins.app import AppPlugin
 from phonedeck.plugins.base import (
     ActionParams,
     ActionPlugin,
@@ -30,6 +31,7 @@ BUILTIN_PLUGINS: tuple[type[ActionPlugin[ActionParams]], ...] = (  # type: ignor
     MediaPlugin,
     VolumePlugin,
     LaunchPlugin,
+    AppPlugin,
     UrlPlugin,
     KeysPlugin,
     MacroPlugin,

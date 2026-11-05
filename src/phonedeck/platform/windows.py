@@ -24,6 +24,7 @@ from pathlib import Path
 from typing import Any, TypeVar
 
 from phonedeck.platform.base import (
+    AppLocation,
     MediaInfo,
     MediaKey,
     PlatformError,
@@ -117,6 +118,7 @@ WM_SYSCOMMAND = 0x0112
 SC_MONITORPOWER = 0xF170
 CREATE_NO_WINDOW = 0x08000000
 ENDPOINT_TTL_S = 3.0  # caché del dispositivo de audio
+APP_CACHE_TTL_S = 300.0  # caché de la ubicación de las apps del catálogo
 
 _MEDIA_VK: dict[MediaKey, int] = {
     MediaKey.PLAY_PAUSE: 0xB3,
@@ -196,6 +198,8 @@ class WindowsBackend:
         )
         self._artwork_cache: tuple[str, bytes] | None = None
         self._endpoint_cache: tuple[float, Any] | None = None
+        self._app_cache: dict[str, tuple[float, AppLocation | None]] = {}
+        self._icon_cache: dict[str, bytes | None] = {}
         self._media_manager: Any = None
         self._shutdown_exe = str(
             Path(os.environ.get("SYSTEMROOT", r"C:\Windows")) / "System32" / "shutdown.exe"
@@ -405,6 +409,44 @@ class WindowsBackend:
             # Popen no espera a que termine el proceso, así que no bloquea el event loop.
             subprocess.Popen(args, creationflags=CREATE_NO_WINDOW)  # noqa: S603, ASYNC220
         log.info("Comando de sistema ejecutado: %s", command.value)
+
+    # ------------------------------------------------------ apps e iconos
+    async def find_app(self, app_id: str) -> AppLocation | None:
+        """Localiza una app del catálogo. Se cachea 5 min (instalar/desinstalar es raro)."""
+        from phonedeck.apps import get_app
+        from phonedeck.platform import windows_apps
+
+        spec = get_app(app_id)
+        if spec is None:
+            return None
+        cached = self._app_cache.get(app_id)
+        if cached is not None and time.monotonic() - cached[0] < APP_CACHE_TTL_S:
+            return cached[1]
+        location = await asyncio.to_thread(windows_apps.locate, spec)
+        self._app_cache[app_id] = (time.monotonic(), location)
+        log.debug("App %s: %s", app_id, location)
+        return location
+
+    def forget_app(self, app_id: str) -> None:
+        """Descarta la caché (p. ej. si la ruta encontrada dejó de existir)."""
+        self._app_cache.pop(app_id, None)
+
+    async def target_icon(self, target: str, size: int = 160) -> bytes | None:
+        from phonedeck.platform import windows_apps
+
+        key = f"{target}|{size}"
+        if key not in self._icon_cache:
+
+            def extract() -> bytes | None:
+                exe = windows_apps.resolve_target(target)
+                return windows_apps.extract_icon_png(exe, size) if exe else None
+
+            try:
+                self._icon_cache[key] = await asyncio.to_thread(extract)
+            except OSError:
+                log.debug("No se pudo extraer el icono de %s", target, exc_info=True)
+                self._icon_cache[key] = None
+        return self._icon_cache[key]
 
     async def close(self) -> None:
         self._com.shutdown(wait=False, cancel_futures=True)

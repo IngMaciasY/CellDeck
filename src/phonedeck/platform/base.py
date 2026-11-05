@@ -62,6 +62,15 @@ class MediaInfo:
     artwork_hash: str | None = None
 
 
+@dataclass(frozen=True, slots=True)
+class AppLocation:
+    """Dónde está instalada una aplicación del catálogo y cómo abrirla."""
+
+    path: str | None  # ejecutable encontrado (preferido)
+    uri: str | None  # alternativa: URI de protocolo registrado
+    source: str  # cómo se encontró (para diagnóstico): "registro", "vswhere", ...
+
+
 class PlatformError(Exception):
     """Error esperado de la capa nativa (mensaje apto para mostrar al usuario)."""
 
@@ -101,6 +110,15 @@ class PlatformBackend(Protocol):
 
     async def system_command(self, command: SystemCommand) -> None:
         """Ejecuta un comando de sistema (bloquear, suspender, apagar...)."""
+
+    async def find_app(self, app_id: str) -> AppLocation | None:
+        """Localiza una app del catálogo (``phonedeck.apps``) sin depender de rutas fijas."""
+
+    def forget_app(self, app_id: str) -> None:
+        """Olvida la ubicación cacheada de una app (se volverá a buscar)."""
+
+    async def target_icon(self, target: str, size: int = 160) -> bytes | None:
+        """PNG del icono de un ejecutable, ruta o URI (el logotipo oficial de la app)."""
 
     async def close(self) -> None:
         """Libera recursos (hilos, COM...)."""
