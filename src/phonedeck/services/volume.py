@@ -14,6 +14,7 @@ def volume_payload(state: VolumeState) -> dict[str, Any]:
 
 class VolumeService(Poller):
     name = "volume"
+    topic = "volume"
     interval = 1.0
     idle_interval = 5.0
 

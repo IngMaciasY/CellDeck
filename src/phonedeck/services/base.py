@@ -14,15 +14,18 @@ MAX_BACKOFF_S = 30.0
 
 
 class Poller(ABC):
-    """Ejecuta ``tick()`` periódicamente.
+    """Ejecuta ``tick()`` periódicamente, solo cuando alguien necesita el dato.
 
-    - Con clientes conectados usa ``interval``; sin clientes, ``idle_interval``
-      (ahorra CPU cuando nadie mira el panel).
+    - ``topic``: tema del WebSocket que publica. Si ningún cliente está suscrito (ningún
+      celular muestra ese widget), no se consulta a Windows.
+    - Con suscriptores usa ``interval``; sin ellos espera ``idle_interval``, pero se
+      despierta al instante cuando un cliente se suscribe.
     - Si ``tick()`` falla repetidamente, espera cada vez más (hasta 30 s) y solo
       registra la traza completa la primera vez para no inundar el log.
     """
 
     name: ClassVar[str]
+    topic: ClassVar[str | None] = None
     interval: ClassVar[float] = 1.0
     idle_interval: ClassVar[float] = 5.0
 
@@ -35,8 +38,11 @@ class Poller(ABC):
     async def tick(self) -> None:
         """Una iteración: leer el estado y difundirlo si cambió."""
 
+    def wanted(self) -> bool:
+        return self.topic is None or self.state.hub.subscribers(self.topic) > 0
+
     def next_delay(self) -> float:
-        base = self.interval if self.state.hub.client_count else self.idle_interval
+        base = self.interval if self.wanted() else self.idle_interval
         if self.errors:
             return min(MAX_BACKOFF_S, base * float(2 ** min(self.errors, 5)))
         return base
@@ -44,17 +50,18 @@ class Poller(ABC):
     async def run(self) -> None:
         self.log.debug("Servicio %s iniciado", self.name)
         while True:
-            try:
-                await self.tick()
-                if self.errors:
-                    self.log.info("Servicio %s recuperado", self.name)
-                self.errors = 0
-            except asyncio.CancelledError:
-                raise
-            except Exception:
-                self.errors += 1
-                if self.errors == 1:
-                    self.log.exception("Fallo en el servicio %s", self.name)
-                else:
-                    self.log.debug("Fallo %d en %s", self.errors, self.name, exc_info=True)
-            await asyncio.sleep(self.next_delay())
+            if self.wanted():
+                try:
+                    await self.tick()
+                    if self.errors:
+                        self.log.info("Servicio %s recuperado", self.name)
+                    self.errors = 0
+                except asyncio.CancelledError:
+                    raise
+                except Exception:
+                    self.errors += 1
+                    if self.errors == 1:
+                        self.log.exception("Fallo en el servicio %s", self.name)
+                    else:
+                        self.log.debug("Fallo %d en %s", self.errors, self.name, exc_info=True)
+            await self.state.hub.wait_for_change(self.next_delay())

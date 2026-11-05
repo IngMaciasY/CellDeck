@@ -70,6 +70,11 @@ async def handle_client_message(state: AppState, ws: WebSocket, raw: str) -> Non
     if msg_type == "ping":
         await ws.send_text('{"type":"pong"}')
         return
+    if msg_type == "subscribe":
+        topics = msg.get("topics")
+        if isinstance(topics, list) and len(topics) <= 10:
+            await state.hub.subscribe(ws, {t for t in topics if isinstance(t, str)})
+        return
     if not isinstance(msg_type, str) or msg_type not in COMMANDS:
         return
 

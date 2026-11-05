@@ -25,6 +25,7 @@ def read_stats() -> dict[str, Any]:
 
 class StatsService(Poller):
     name = "stats"
+    topic = "stats"
     interval = 2.0
     idle_interval = 10.0
 
@@ -38,8 +39,6 @@ class StatsService(Poller):
             # cpu_percent mide desde la llamada anterior: sin margen devolvería 0.0.
             await asyncio.sleep(0.5)
             self._primed = True
-        if not self.state.hub.client_count and "stats" in self.state.hub.snapshot():
-            return  # nadie mirando: no hace falta enviar nada
         await self.state.hub.broadcast("stats", read_stats())
 
 
