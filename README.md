@@ -4,7 +4,7 @@ Dashboard personalizable para controlar una PC Windows desde un celular Android 
 (probado como objetivo: Xiaomi Redmi 5 Plus, Android 7/8, Chrome 60+). Sin instalar apps:
 el celular abre una página web servida por la PC, por cable USB (`adb reverse`) o WiFi.
 
-> 🚧 **En desarrollo.** Hitos completados: (a) servidor, (b) interfaz del celular, (c) datos en vivo y (d) editor visual.
+> 🚧 **En desarrollo.** Hitos completados: (a) servidor, (b) interfaz del celular, (c) datos en vivo, (d) editor visual y (e) bandeja + .exe.
 >
 > Funciona en celulares viejos (Chrome 60+, p. ej. Xiaomi Redmi 5 Plus), celulares nuevos,
 > tablets y también iPhone/iPad por WiFi: las columnas se adaptan solas a cada pantalla.
@@ -19,15 +19,26 @@ el celular abre una página web servida por la PC, por cable USB (`adb reverse`)
       automáticas para cualquier tamaño de pantalla
 - [x] (d) Editor visual desde el celular o la PC: crear, editar, mover (arrastrando) y borrar
       botones, widgets y páginas; macros paso a paso; apariencia; guardado con control de conflictos
-- [ ] (e) Bandeja + `PhoneDeck.exe`
+- [x] (e) `PhoneDeck.exe` sin consola con icono en la bandeja: QR/PIN, conectar USB, modo WiFi,
+      edición remota, desconectar dispositivos, iniciar con Windows
 - [ ] (f) CI/CD y documentación completa
+
+## Usar PhoneDeck.exe
+
+1. Ejecuta `PhoneDeck.exe`: aparece un icono junto al reloj de Windows.
+2. Clic derecho en el icono → **Conectar celular por USB** (o **Modo WiFi** + **Mostrar QR / PIN**).
+3. En el celular se abre `http://localhost:8765` (por cable) o escanea el QR (WiFi).
+
+Compilarlo tú mismo: `scripts\build.bat` → `dist\PhoneDeck.exe` (dependencias fijadas por hash
+en `requirements\build.lock` y auditadas con pip-audit).
 
 ## Desarrollo rápido
 
 ```bat
 py -3.13 -m venv .venv
 .venv\Scripts\python -m pip install -e .[dev]
-scripts\dev.bat              :: backend real de Windows
+scripts\dev.bat              :: backend real de Windows (con icono en la bandeja)
+scripts\dev.bat --no-tray    :: solo el servidor, sin bandeja
 scripts\dev.bat --fake       :: modo demo: backend simulado con canción de prueba
 ```
 
