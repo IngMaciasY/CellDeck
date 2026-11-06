@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from phonedeck import __version__
+from phonedeck.config.migrations import add_new_sections
 from phonedeck.config.settings import Settings, SettingsStore
 from phonedeck.config.store import ConfigStore
 from phonedeck.netinfo import AllowedHosts
@@ -103,6 +104,7 @@ def build_state(
 
     config_store = ConfigStore(data_dir / "config.json", registry)
     config_store.load()
+    add_new_sections(config_store, settings_store)
 
     backend = backend or create_backend(fake=fake)
     log.info("Backend de plataforma: %s", backend.name)
