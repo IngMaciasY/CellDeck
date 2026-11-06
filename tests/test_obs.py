@@ -193,6 +193,33 @@ async def test_no_connection_without_viewers(server: FakeObs) -> None:
     assert server.requests == []
 
 
+async def test_retrying_keeps_the_failure_visible() -> None:
+    """Sin OBS, el aviso no debe parpadear a "Conectando" en cada reintento."""
+    fake = FakeObs(list(SCENES))
+    await fake.start()
+    port = fake.port
+    await fake.stop()
+    async with running(Harness(port)) as h:
+        await h.until(lambda p: p["status"] == "offline")
+        seen = set()
+        for _ in range(20):
+            seen.add(h.bridge.payload()["status"])
+            await asyncio.sleep(0.01)
+    assert seen == {"offline"}
+
+
+def test_new_clients_do_not_count_as_obs_viewers(client: TestClient, state: AppState) -> None:
+    with client.websocket_connect(f"{WS_URL}?token={local_token(client)}") as ws:
+        ws.send_json({"type": "ping"})
+        receive_until(ws, "pong")
+        assert state.hub.subscribers("obs") == 0
+        assert state.hub.subscribers("mixer") == 0
+        ws.send_json({"type": "subscribe", "topics": ["obs"]})
+        ws.send_json({"type": "ping"})
+        receive_until(ws, "pong")
+        assert state.hub.subscribers("obs") == 1
+
+
 async def test_closes_after_nobody_is_watching(
     server: FakeObs, monkeypatch: pytest.MonkeyPatch
 ) -> None:

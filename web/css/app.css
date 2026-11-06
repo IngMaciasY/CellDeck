@@ -360,14 +360,14 @@ svg.icon {
 .mixer-head { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 14px; }
 .mixer-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mixer-value { flex: none; margin-left: 8px; color: var(--muted); font-variant-numeric: tabular-nums; }
-.mixer-row input[type="range"] { touch-action: pan-y; }   /* deslizar en vertical sigue haciendo scroll */
+.mixer-row input[type="range"] { display: block; width: 100%; touch-action: pan-y; }   /* deslizar en vertical sigue haciendo scroll */
 .mixer-row .icon-btn { flex: none; margin-left: 8px; background: var(--surface-2); }
 .mixer-row.muted .mixer-main, .mixer-row.muted .mixer-icon { opacity: 0.45; }
 
-.w-pomodoro { display: flex; flex-direction: column; align-items: center; overflow-y: auto; }
+.w-pomodoro { display: flex; flex-direction: column; align-items: center; overflow-y: auto; -webkit-overflow-scrolling: touch; }
 .w-pomodoro[data-phase="short_break"] { --phase: var(--ok); }
 .w-pomodoro[data-phase="long_break"] { --phase: var(--warn); }
-.pomo-phase { color: var(--phase, var(--accent)); font-size: 15px; font-weight: 600; }
+.pomo-phase { margin-top: auto; color: var(--phase, var(--accent)); font-size: 15px; font-weight: 600; }
 .pomo-time { margin: 2px 0 8px; font-size: 56px; font-weight: 300; line-height: 1.1; font-variant-numeric: tabular-nums; }
 .w-pomodoro .meter-bar { flex: none; width: 100%; margin: 0; }
 .w-pomodoro .meter-fill { background: var(--phase, var(--accent)); }
@@ -375,8 +375,8 @@ svg.icon {
 .pomo-actions { display: flex; flex: none; width: 100%; margin-top: 8px; }
 .pomo-actions .btn { display: flex; align-items: center; justify-content: center; }
 .pomo-actions svg { width: 20px; height: 20px; margin-right: 6px; }
-.btn-primary { background: var(--accent); color: #fff; }
-.pomo-settings { flex: none; width: 100%; margin-top: 8px; font-size: 14px; }
+.pomo-actions .btn-primary { background: var(--accent); color: #fff; }
+.pomo-settings { flex: none; width: 100%; margin-top: 8px; margin-bottom: auto; font-size: 14px; }
 .pomo-settings summary { padding: 8px 4px; color: var(--muted); text-align: center; }
 .pomo-form { display: flex; flex-direction: column; }
 .pomo-field { display: flex; align-items: center; justify-content: space-between; padding: 4px; }
@@ -393,7 +393,7 @@ svg.icon {
   text-align: right;
 }
 
-.w-obs { display: flex; flex-direction: column; overflow-y: auto; }
+.w-obs { display: flex; flex-direction: column; overflow-y: auto; -webkit-overflow-scrolling: touch; }
 .obs-status { display: flex; flex: none; align-items: center; min-height: 28px; font-size: 14px; }
 .obs-dot { flex: none; width: 10px; height: 10px; margin-right: 8px; border-radius: 50%; background: var(--muted); }
 .obs-dot.online { background: var(--ok); }

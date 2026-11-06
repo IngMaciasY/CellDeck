@@ -198,6 +198,8 @@ def test_alert_reaches_clients_on_other_pages(client: TestClient, state: AppStat
 
 def test_controls_and_config_from_the_phone(client: TestClient, state: AppState) -> None:
     with client.websocket_connect(f"{WS_URL}?token={local_token(client)}") as ws:
+        ws.send_json({"type": "subscribe", "topics": ["pomodoro"]})
+        assert receive_until(ws, "pomodoro")["data"]["status"] == "idle"
         ws.send_json({"type": "pomodoro.control", "action": "start"})
         assert receive_until(ws, "pomodoro")["data"]["status"] == "running"
         ws.send_json({"type": "pomodoro.control", "action": "pause"})

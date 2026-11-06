@@ -88,6 +88,12 @@
     save.type = 'button';
 
     let running = false;
+    let edited = false;
+
+    form.addEventListener('input', function () { edited = true; });
+    box.addEventListener('toggle', function () {
+      if (!box.open) edited = false;
+    });
 
     save.addEventListener('click', function () {
       const message = {};
@@ -112,7 +118,7 @@
       el: box,
       update: function (data) {
         running = data.status !== 'idle';
-        if (box.open) return;   // no pisar lo que se está escribiendo
+        if (edited) return;   // no pisar lo que se está escribiendo
         FIELDS.forEach(function (field) {
           inputs[field[0]].value = String(data.durations[field[0]]);
         });

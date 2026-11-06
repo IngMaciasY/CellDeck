@@ -191,7 +191,9 @@ class ObsBridge:
 
     async def _session(self) -> None:
         settings = self._settings()
-        await self._set_status(ObsStatus.CONNECTING, CONNECTING_MESSAGE)
+        # Tras un fallo se mantiene el aviso mientras se reintenta: así no parpadea.
+        if self._status is ObsStatus.ONLINE:
+            await self._set_status(ObsStatus.CONNECTING, CONNECTING_MESSAGE)
         async with connect(
             f"ws://{settings.obs_host}:{settings.obs_port}",
             subprotocols=[SUBPROTOCOL],

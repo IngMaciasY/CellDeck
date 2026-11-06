@@ -22,6 +22,9 @@ log = logging.getLogger(__name__)
 SEND_TIMEOUT_S = 5.0
 # Temas filtrables; el resto de mensajes (config, hello, error) llega siempre a todos.
 LIVE_TOPICS = frozenset({"media", "volume", "stats", "mixer", "pomodoro", "obs"})
+# Temas de un cliente que aún no eligió. Los demás se piden siempre: si no, abrir la página en
+# cualquier sección contaría unos instantes como mirar OBS, y el puente se conectaría a OBS.
+INITIAL_TOPICS = frozenset({"media", "volume", "stats"})
 
 
 class WebSocketHub:
@@ -67,7 +70,7 @@ class WebSocketHub:
         self._providers[topic] = provider
 
     async def register(self, ws: WebSocket) -> None:
-        self._clients[ws] = LIVE_TOPICS
+        self._clients[ws] = INITIAL_TOPICS
         log.info("Cliente WebSocket conectado (%d en total)", len(self._clients))
         for msg_type, data in self._snapshot.items():
             await self._send(ws, msg_type, data)

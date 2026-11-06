@@ -38,6 +38,7 @@
       port.value = String(data.port);
       password.value = '';
       password.placeholder = data.has_password ? 'Sin cambios' : 'Sin contraseña';
+      if (box.open) save.scrollIntoView({ block: 'nearest' });
     }
 
     box.addEventListener('toggle', function () {
