@@ -60,3 +60,8 @@ Registro de lo que se eligió, lo que se descartó y por qué. Lo más reciente 
   obs-websocket 5 y el nombre funciona en todas.
 - **Conexión bajo demanda:** solo se conecta si alguien mira la página, y cierra tras un minuto
   sin nadie. Sin OBS abierto, reintenta con espera creciente de hasta 30 s.
+- **Temas bajo demanda:** un cliente recién conectado solo recibe `media`, `volume` y `stats`.
+  Si recibiera todos, abrir cualquier página contaría un instante como mirar OBS.
+- **Contraseña sin cifrar en `settings.json`:** es el mismo trato que el PIN y el secreto de los
+  tokens. **Descartado:** el almacén de credenciales de Windows, que añade dependencias y no
+  protege frente a un programa que ya corre con tu usuario.

@@ -23,6 +23,28 @@ el celular abre una página web servida por la PC, por cable USB (`adb reverse`)
       edición remota, desconectar dispositivos, iniciar con Windows
 - [ ] (f) CI/CD y documentación completa
 
+## Volume Mixer, Pomodoro y OBS
+
+Aparecen como páginas nuevas al actualizar. Son widgets normales: se pueden mover o quitar
+con el editor, y al quitar uno el celular pierde ese control.
+
+- **Volume Mixer:** volumen y silencio por aplicación, con nombre e icono, sincronizado con
+  Windows. Usa el dispositivo de salida predeterminado.
+- **Pomodoro:** trabajo, descanso corto y descanso largo (tras 4 periodos de trabajo). El
+  temporizador corre en la PC y los tiempos se ajustan desde el celular, también por WiFi. Al
+  terminar cada periodo avisa en el celular y con una notificación de Windows (esta última
+  necesita el icono de la bandeja). Si cambias entre USB y WiFi se reinicia el temporizador.
+- **OBS:** un botón por escena, con la activa resaltada. Requiere OBS 28 o posterior.
+
+### Conectar OBS
+
+1. En OBS, abre **Herramientas** y entra a los ajustes del servidor WebSocket.
+2. Activa el servidor y copia la contraseña.
+3. En PhoneDeck, abre la página **OBS** desde la PC o con el celular por USB, toca
+   **Configurar conexión** y pégala. Por WiFi este formulario no aparece.
+
+PhoneDeck se conecta a OBS desde la PC, así que OBS no necesita abrirse a la red.
+
 ## Usar PhoneDeck.exe
 
 1. Ejecuta `PhoneDeck.exe`: aparece un icono junto al reloj de Windows.
