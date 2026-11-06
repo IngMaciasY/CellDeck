@@ -12,6 +12,7 @@ import asyncio
 import contextlib
 import json
 import logging
+from collections.abc import Callable
 from typing import Any
 
 from fastapi import WebSocket
@@ -20,7 +21,7 @@ log = logging.getLogger(__name__)
 
 SEND_TIMEOUT_S = 5.0
 # Temas filtrables; el resto de mensajes (config, hello, error) llega siempre a todos.
-LIVE_TOPICS = frozenset({"media", "volume", "stats"})
+LIVE_TOPICS = frozenset({"media", "volume", "stats", "mixer", "pomodoro", "obs"})
 
 
 class WebSocketHub:
@@ -35,6 +36,8 @@ class WebSocketHub:
         # (compatibilidad con clientes antiguos).
         self._clients: dict[WebSocket, frozenset[str]] = {}
         self._snapshot: dict[str, Any] = {}
+        # Temas cuyo valor caduca (el tiempo restante del Pomodoro): se calculan al enviarlos.
+        self._providers: dict[str, Callable[[], Any]] = {}
         self._wakeup = asyncio.Event()
 
     @property
@@ -55,15 +58,24 @@ class WebSocketHub:
                 await self._wakeup.wait()
         self._wakeup.clear()
 
-    def _wake(self) -> None:
+    def wake(self) -> None:
+        """Despierta ya a los servicios (cambió una suscripción o hay un dato nuevo)."""
         self._wakeup.set()
+
+    def set_provider(self, topic: str, provider: Callable[[], Any]) -> None:
+        """Hace que ``topic`` se calcule en cada alta en vez de reenviar una copia guardada."""
+        self._providers[topic] = provider
+
+    def _current(self) -> dict[str, Any]:
+        """Último valor de cada tema, con los temas dinámicos recién calculados."""
+        return self._snapshot | {topic: fn() for topic, fn in self._providers.items()}
 
     async def register(self, ws: WebSocket) -> None:
         self._clients[ws] = LIVE_TOPICS
         log.info("Cliente WebSocket conectado (%d en total)", len(self._clients))
-        for msg_type, data in self._snapshot.items():
+        for msg_type, data in self._current().items():
             await self._send(ws, msg_type, data)
-        self._wake()
+        self.wake()
 
     def unregister(self, ws: WebSocket) -> None:
         if ws in self._clients:
@@ -77,11 +89,12 @@ class WebSocketHub:
         wanted = frozenset(topics & LIVE_TOPICS)
         added = wanted - self._clients[ws]
         self._clients[ws] = wanted
+        current = self._current()
         for topic in sorted(added):
-            if topic in self._snapshot:
-                await self._send(ws, topic, self._snapshot[topic])
+            if topic in current:
+                await self._send(ws, topic, current[topic])
         if added:
-            self._wake()  # que los servicios lean ya el dato en vez de esperar
+            self.wake()  # que los servicios lean ya el dato en vez de esperar
 
     async def broadcast(self, msg_type: str, data: Any, cache: bool = True) -> None:
         """Envía ``{"type": msg_type, "data": data}`` a los clientes interesados."""

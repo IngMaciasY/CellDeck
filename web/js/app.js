@@ -93,7 +93,7 @@
   }
 
   // ------------------------------------------------- suscripción a datos en vivo
-  const WIDGET_TOPICS = { now_playing: 'media', volume: 'volume', stats: 'stats' };
+  const WIDGET_TOPICS = { now_playing: 'media', volume: 'volume', stats: 'stats', mixer: 'mixer' };
 
   /** Temas en vivo que necesita la página visible (según sus widgets). */
   function topicsForPage(page) {
@@ -266,6 +266,8 @@
   }
 
   // ------------------------------------------------------------ WebSocket
+  const LIVE_TYPES = ['media', 'volume', 'stats', 'mixer'];
+
   function onLiveMessage(type, data) {
     if (type === 'config') {
       receiveConfig(data);
@@ -280,7 +282,7 @@
       updateEditButton();
       return;
     }
-    if (type === 'media' || type === 'volume' || type === 'stats') {
+    if (LIVE_TYPES.indexOf(type) >= 0) {
       state.snapshot[type] = data;
       PD.grid.dispatch(type, data);
     }

@@ -71,6 +71,15 @@
         { "kind": "button", "id": "sleep", "label": "Suspender", "icon": "moon", "confirm": true,
           "action": { "type": "system", "command": "sleep" } }
       ]
+    },
+    {
+      "id": "mixer",
+      "name": "Volume Mixer",
+      "icon": "sliders",
+      "items": [
+        { "kind": "widget", "id": "mixer-master", "widget": "volume", "w": 6, "h": 1 },
+        { "kind": "widget", "id": "mixer", "widget": "mixer", "w": 6, "h": 4 }
+      ]
     }
   ]
 }

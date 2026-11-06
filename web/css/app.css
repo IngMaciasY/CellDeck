@@ -338,6 +338,32 @@ svg.icon {
 .w-volume .value { flex: none; width: 48px; text-align: right; font-variant-numeric: tabular-nums; }
 .w-volume.muted .value, .w-volume.muted input { opacity: 0.45; }
 
+.widget-message { margin: 0; padding: 12px 4px; color: var(--muted); text-align: center; }
+
+.w-mixer { display: flex; flex-direction: column; padding: 6px 8px; }
+.mixer-list { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.mixer-list:empty { flex: none; }
+.mixer-row { display: flex; align-items: center; padding: 8px 4px; }
+.mixer-row + .mixer-row { border-top: 1px solid var(--surface-2); }
+.mixer-icon {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  margin-right: 10px;
+  color: var(--muted);
+}
+.mixer-icon img { width: 32px; height: 32px; object-fit: contain; }
+.mixer-main { flex: 1; min-width: 0; }
+.mixer-head { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 14px; }
+.mixer-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mixer-value { flex: none; margin-left: 8px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.mixer-row input[type="range"] { touch-action: pan-y; }   /* deslizar en vertical sigue haciendo scroll */
+.mixer-row .icon-btn { flex: none; margin-left: 8px; background: var(--surface-2); }
+.mixer-row.muted .mixer-main, .mixer-row.muted .mixer-icon { opacity: 0.45; }
+
 input[type="range"] {
   flex: 1;
   min-width: 0;

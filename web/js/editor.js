@@ -19,7 +19,10 @@
   const $ = u.$;
 
   const WIDGET_TYPES = [['now_playing', 'Ahora suena'], ['volume', 'Volumen'], ['clock', 'Reloj'],
-    ['stats', 'CPU / RAM']];
+    ['stats', 'CPU / RAM'], ['mixer', 'Volume Mixer']];
+  const WIDGET_ICONS = { now_playing: 'music', volume: 'volume-2', clock: 'clock', stats: 'cpu',
+    mixer: 'sliders' };
+  const WIDGET_HEIGHTS = { now_playing: 2, mixer: 4 };
 
   const E = {
     active: false,
@@ -257,6 +260,9 @@
         } else if (item.widget === 'volume') {
           optsBox.appendChild(u.el('p', 'field-hint',
             'Mientras exista este widget, el celular puede mover el volumen con el slider.'));
+        } else if (item.widget === 'mixer') {
+          optsBox.appendChild(u.el('p', 'field-hint',
+            'Mientras exista este widget, el celular puede cambiar el volumen de cada aplicación.'));
         }
       }
       body.appendChild(F.field('Widget', F.select(WIDGET_TYPES, item.widget, function (v) {
@@ -392,11 +398,10 @@
         action: F.defaults('media') };
     });
     WIDGET_TYPES.forEach(function (w) {
-      const icons = { now_playing: 'music', volume: 'volume-2', clock: 'clock', stats: 'cpu' };
-      choice('Widget: ' + w[1], icons[w[0]], function () {
+      choice('Widget: ' + w[1], WIDGET_ICONS[w[0]], function () {
         return { kind: 'widget', id: newId(w[0], itemIds(page)), widget: w[0],
           w: 3,
-          h: w[0] === 'now_playing' ? 2 : 1 };
+          h: WIDGET_HEIGHTS[w[0]] || 1 };
       });
     });
     dialog = F.modal({ title: 'Añadir', body: body, actions: [{ label: 'Cancelar' }] });

@@ -1,10 +1,12 @@
 """Comandos en vivo que envían los widgets del celular por WebSocket.
 
-Solo existen tres comandos, con parámetros acotados:
+Son pocos comandos, con parámetros acotados:
 
 - ``volume.set``  ``{"value": 0..100}``   (slider del widget de volumen)
 - ``volume.mute`` ``{"muted": bool}``     (botón del widget de volumen)
 - ``media``       ``{"command": MediaKey}`` (controles del widget "ahora suena")
+- ``mixer.set``   ``{"key": clave, "value": 0..100}`` (volumen de una aplicación)
+- ``mixer.mute``  ``{"key": clave, "muted": bool}``   (silenciar una aplicación)
 
 Y solo se aceptan si el widget correspondiente está en la configuración: si el usuario
 quita el widget, el celular deja de poder usar ese control.
@@ -26,6 +28,7 @@ from phonedeck.state import AppState
 log = logging.getLogger(__name__)
 
 MAX_MESSAGE_BYTES = 4096
+APP_KEY_PATTERN = r"^[a-z0-9]{1,32}$"
 
 
 class _Msg(BaseModel):
@@ -44,11 +47,23 @@ class MediaCommand(_Msg):
     command: MediaKey
 
 
+class MixerSet(_Msg):
+    key: str = Field(pattern=APP_KEY_PATTERN)
+    value: int = Field(ge=0, le=100)
+
+
+class MixerMute(_Msg):
+    key: str = Field(pattern=APP_KEY_PATTERN)
+    muted: bool
+
+
 # tipo de mensaje → (modelo, widget requerido en la config)
 COMMANDS: dict[str, tuple[type[_Msg], str]] = {
     "volume.set": (VolumeSet, "volume"),
     "volume.mute": (VolumeMute, "volume"),
     "media": (MediaCommand, "now_playing"),
+    "mixer.set": (MixerSet, "mixer"),
+    "mixer.mute": (MixerMute, "mixer"),
 }
 
 
@@ -96,6 +111,11 @@ async def handle_client_message(state: AppState, ws: WebSocket, raw: str) -> Non
             await backend.set_mute(cmd.muted)
         elif isinstance(cmd, MediaCommand):
             await backend.send_media_key(cmd.command)
+        elif isinstance(cmd, MixerSet):
+            await backend.set_app_volume(cmd.key, cmd.value)
+        elif isinstance(cmd, MixerMute):
+            await backend.set_app_mute(cmd.key, cmd.muted)
+            state.hub.wake()  # el botón debe reaccionar ya; el slider ya se mueve solo
     except PlatformError as exc:
         await _send(ws, "error", {"message": str(exc)})
         return

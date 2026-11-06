@@ -17,6 +17,7 @@ import logging
 import os
 import re
 import shutil
+import struct
 import subprocess
 import sys
 from ctypes import wintypes
@@ -242,6 +243,23 @@ class BITMAPINFOHEADER(ctypes.Structure):
 
 _user32 = ctypes.WinDLL("user32", use_last_error=True)
 _gdi32 = ctypes.WinDLL("gdi32", use_last_error=True)
+_version = ctypes.WinDLL("version", use_last_error=True)
+_version.GetFileVersionInfoSizeW.argtypes = (wintypes.LPCWSTR, ctypes.c_void_p)
+_version.GetFileVersionInfoSizeW.restype = wintypes.DWORD
+_version.GetFileVersionInfoW.argtypes = (
+    wintypes.LPCWSTR,
+    wintypes.DWORD,
+    wintypes.DWORD,
+    ctypes.c_void_p,
+)
+_version.GetFileVersionInfoW.restype = wintypes.BOOL
+_version.VerQueryValueW.argtypes = (
+    ctypes.c_void_p,
+    wintypes.LPCWSTR,
+    ctypes.POINTER(ctypes.c_void_p),
+    ctypes.POINTER(wintypes.UINT),
+)
+_version.VerQueryValueW.restype = wintypes.BOOL
 _user32.PrivateExtractIconsW.argtypes = (
     wintypes.LPCWSTR,
     ctypes.c_int,
@@ -310,6 +328,30 @@ def _render(hicon: int, size: int, background: int) -> bytes:
         _gdi32.SelectObject(hdc, old)
         _gdi32.DeleteObject(hbmp)
         _gdi32.DeleteDC(hdc)
+
+
+def file_description(path: str) -> str | None:
+    """Nombre legible de un ejecutable ("Brave Browser"), leído de sus datos de versión."""
+    size = _version.GetFileVersionInfoSizeW(path, None)
+    if not size:
+        return None
+    data = ctypes.create_string_buffer(size)
+    if not _version.GetFileVersionInfoW(path, 0, size, data):
+        return None
+    pointer = ctypes.c_void_p()
+    length = wintypes.UINT()
+    found = _version.VerQueryValueW(
+        data, r"\VarFileInfo\Translation", ctypes.byref(pointer), ctypes.byref(length)
+    )
+    if not found or length.value < 4 or not pointer.value:
+        return None
+    language, codepage = struct.unpack("<HH", ctypes.string_at(pointer.value, 4))
+    entry = rf"\StringFileInfo\{language:04x}{codepage:04x}\FileDescription"
+    if not _version.VerQueryValueW(data, entry, ctypes.byref(pointer), ctypes.byref(length)):
+        return None
+    if not length.value or not pointer.value:
+        return None
+    return ctypes.wstring_at(pointer.value).strip() or None
 
 
 def extract_icon_png(path: str, size: int = 160) -> bytes | None:

@@ -9,10 +9,12 @@ from __future__ import annotations
 import logging
 import time
 from collections.abc import Sequence
+from dataclasses import replace
 from typing import Any
 
 from phonedeck.platform.base import (
     AppLocation,
+    AudioApp,
     MediaInfo,
     MediaKey,
     PlatformError,
@@ -40,6 +42,7 @@ class FakeBackend:
         self.calls: list[tuple[str, tuple[Any, ...]]] = []
         self.volume = VolumeState(level=50, muted=False)
         self.now_playing: MediaInfo | None = None
+        self.audio_apps: dict[str, AudioApp] = {}
         self.fail_with: str | None = None  # si se fija, la siguiente llamada falla
         # Apps "instaladas" e iconos simulados (los tests los rellenan).
         self.apps: dict[str, AppLocation] = {}
@@ -50,6 +53,13 @@ class FakeBackend:
         self._demo_playing = True
         self._demo_started = time.monotonic()
         self._demo_offset = 0.0
+        if demo:
+            self.audio_apps = {
+                "spotify": AudioApp("spotify", "Spotify", 80, False),
+                "brave": AudioApp("brave", "Brave", 45, False),
+                "discord": AudioApp("discord", "Discord", 100, True),
+                "system": AudioApp("system", "Sonidos del sistema", 60, False),
+            }
 
     # ------------------------------------------------------------- utilidades
     def _record(self, name: str, *args: Any) -> None:
@@ -109,6 +119,22 @@ class FakeBackend:
     async def set_mute(self, muted: bool) -> None:
         self._record("set_mute", muted)
         self.volume = VolumeState(level=self.volume.level, muted=muted)
+
+    async def list_audio_apps(self) -> list[AudioApp]:
+        return list(self.audio_apps.values())
+
+    def _audio_app(self, key: str) -> AudioApp:
+        if key not in self.audio_apps:
+            raise PlatformError("Esa aplicación ya no tiene audio")
+        return self.audio_apps[key]
+
+    async def set_app_volume(self, key: str, level: int) -> None:
+        self._record("set_app_volume", key, level)
+        self.audio_apps[key] = replace(self._audio_app(key), level=max(0, min(100, level)))
+
+    async def set_app_mute(self, key: str, muted: bool) -> None:
+        self._record("set_app_mute", key, muted)
+        self.audio_apps[key] = replace(self._audio_app(key), muted=muted)
 
     async def get_now_playing(self) -> MediaInfo | None:
         if self.demo and self.now_playing is None:

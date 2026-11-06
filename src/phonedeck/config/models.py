@@ -26,7 +26,7 @@ ID_PATTERN = r"^[A-Za-z0-9_-]{1,40}$"
 HEX_COLOR = r"^#[0-9A-Fa-f]{6}$"
 ICON_PATTERN = r"^[a-z0-9-]{1,40}$"
 
-WidgetKind = Literal["clock", "stats", "now_playing", "volume"]
+WidgetKind = Literal["clock", "stats", "now_playing", "volume", "mixer", "pomodoro", "obs"]
 
 
 class _Model(BaseModel):
@@ -53,7 +53,7 @@ class ButtonItem(_Model):
 
 
 class WidgetItem(_Model):
-    """Widget informativo (reloj, CPU/RAM, ahora suena, volumen)."""
+    """Widget en vivo (reloj, CPU/RAM, ahora suena, volumen, mezclador, Pomodoro, OBS)."""
 
     kind: Literal["widget"]
     id: str = Field(pattern=ID_PATTERN)

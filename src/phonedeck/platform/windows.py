@@ -2,7 +2,7 @@
 
 - Teclado: ``SendInput`` vía ctypes (sin dependencias, sin permisos de administrador).
 - Programas/URIs: ``ShellExecuteW``.
-- Volumen: pycaw (COM) en un hilo dedicado con COM inicializado.
+- Volumen y mezclador por aplicación: pycaw (COM) en un hilo dedicado con COM inicializado.
 - Ahora suena: WinRT ``GlobalSystemMediaTransportControlsSessionManager``.
 
 Nota: Windows bloquea (UIPI) la entrada simulada hacia ventanas que se ejecutan
@@ -25,6 +25,7 @@ from typing import Any, TypeVar
 
 from phonedeck.platform.base import (
     AppLocation,
+    AudioApp,
     MediaInfo,
     MediaKey,
     PlatformError,
@@ -198,6 +199,7 @@ class WindowsBackend:
         )
         self._artwork_cache: tuple[str, bytes] | None = None
         self._endpoint_cache: tuple[float, Any] | None = None
+        self._mixer: Any = None  # AudioMixer: se crea en el hilo COM
         self._app_cache: dict[str, tuple[float, AppLocation | None]] = {}
         self._icon_cache: dict[str, bytes | None] = {}
         self._media_manager: Any = None
@@ -319,6 +321,24 @@ class WindowsBackend:
 
     async def set_mute(self, muted: bool) -> None:
         await self._in_com(lambda: self._with_endpoint(lambda ep: ep.SetMute(int(muted), None)))
+
+    # -------------------------------------------------------------- mezclador
+    def _audio_mixer(self) -> Any:
+        if self._mixer is None:
+            from phonedeck.platform.windows_audio import AudioMixer
+
+            self._mixer = AudioMixer()
+        return self._mixer
+
+    async def list_audio_apps(self) -> list[AudioApp]:
+        apps: list[AudioApp] = await self._in_com(lambda: self._audio_mixer().list_apps())
+        return apps
+
+    async def set_app_volume(self, key: str, level: int) -> None:
+        await self._in_com(lambda: self._audio_mixer().set_level(key, level))
+
+    async def set_app_mute(self, key: str, muted: bool) -> None:
+        await self._in_com(lambda: self._audio_mixer().set_muted(key, muted))
 
     # ------------------------------------------------------------ ahora suena
     async def get_now_playing(self) -> MediaInfo | None:

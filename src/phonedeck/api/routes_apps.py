@@ -24,6 +24,7 @@ from phonedeck.state import AppState
 router = APIRouter(prefix="/api", tags=["apps"])
 
 ICON_SIZE = 160  # px: nítido hasta ~64 px CSS en pantallas de densidad 2,5x
+MIXER_ICON_SIZE = 96  # px: el mezclador los muestra a unos 32 px CSS
 
 
 @router.get("/apps")
@@ -77,6 +78,20 @@ async def button_icon(
     if png is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Sin icono para esta acción")
     # La URL lleva la revisión de la config (?v=): se puede cachear sin riesgo.
+    return Response(
+        png, media_type="image/png", headers={"Cache-Control": "private, max-age=86400"}
+    )
+
+
+@router.get("/mixer/icon/{key}")
+async def mixer_icon(key: str, request: Request, state: StateDep, token: str = "") -> Response:
+    """Icono de una app del mezclador. La clave solo vale si esa app tiene audio ahora."""
+    if state.tokens.verify(token or request.headers.get(TOKEN_HEADER)) is None:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Token inválido o ausente")
+    path = state.live.audio_paths.get(key)
+    png = await state.backend.target_icon(path, MIXER_ICON_SIZE) if path else None
+    if png is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Sin icono para esta aplicación")
     return Response(
         png, media_type="image/png", headers={"Cache-Control": "private, max-age=86400"}
     )

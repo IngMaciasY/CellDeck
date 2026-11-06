@@ -38,6 +38,8 @@ class LiveState:
     """Estado en vivo compartido entre servicios y rutas."""
 
     artwork: Artwork | None = None
+    # Clave de cada app del mezclador → su ejecutable. El celular solo conoce la clave.
+    audio_paths: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass

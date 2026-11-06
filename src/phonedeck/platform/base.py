@@ -48,6 +48,21 @@ class VolumeState:
 
 
 @dataclass(frozen=True, slots=True)
+class AudioApp:
+    """Una aplicación con sesión de audio en el dispositivo de salida predeterminado.
+
+    ``key`` es opaca y estable mientras la app siga abierta; ``path`` (para sacar el icono)
+    nunca se envía al celular. ``level`` va de 0 a 100 y es relativo al volumen maestro.
+    """
+
+    key: str
+    name: str
+    level: int
+    muted: bool
+    path: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
 class MediaInfo:
     """Información de la sesión multimedia actual ("ahora suena")."""
 
@@ -104,6 +119,15 @@ class PlatformBackend(Protocol):
 
     async def set_mute(self, muted: bool) -> None:
         """Silencia o reactiva el audio."""
+
+    async def list_audio_apps(self) -> list[AudioApp]:
+        """Aplicaciones con sesión de audio (una entrada por aplicación)."""
+
+    async def set_app_volume(self, key: str, level: int) -> None:
+        """Fija el volumen de una aplicación (0-100) sin tocar las demás."""
+
+    async def set_app_mute(self, key: str, muted: bool) -> None:
+        """Silencia o reactiva una aplicación sin tocar las demás."""
 
     async def get_now_playing(self) -> MediaInfo | None:
         """Devuelve la sesión multimedia actual o ``None`` si no hay ninguna."""

@@ -1,6 +1,6 @@
 /*
  * PhoneDeck - conexión WebSocket con reconexión exponencial.
- * El servidor envía {type, data}: hello, config, media, volume, stats.
+ * El servidor envía {type, data}: hello, config y los temas en vivo.
  */
 (function (global) {
   'use strict';
