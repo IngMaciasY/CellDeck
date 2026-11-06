@@ -88,6 +88,14 @@
       "items": [
         { "kind": "widget", "id": "pomodoro", "widget": "pomodoro", "w": 6, "h": 4 }
       ]
+    },
+    {
+      "id": "obs",
+      "name": "OBS",
+      "icon": "video",
+      "items": [
+        { "kind": "widget", "id": "obs", "widget": "obs", "w": 6, "h": 4 }
+      ]
     }
   ]
 }

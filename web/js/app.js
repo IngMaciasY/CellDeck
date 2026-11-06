@@ -94,7 +94,7 @@
 
   // ------------------------------------------------- suscripción a datos en vivo
   const WIDGET_TOPICS = { now_playing: 'media', volume: 'volume', stats: 'stats', mixer: 'mixer',
-    pomodoro: 'pomodoro' };
+    pomodoro: 'pomodoro', obs: 'obs' };
 
   /** Temas en vivo que necesita la página visible (según sus widgets). */
   function topicsForPage(page) {
@@ -267,7 +267,7 @@
   }
 
   // ------------------------------------------------------------ WebSocket
-  const LIVE_TYPES = ['media', 'volume', 'stats', 'mixer', 'pomodoro'];
+  const LIVE_TYPES = ['media', 'volume', 'stats', 'mixer', 'pomodoro', 'obs'];
 
   function onLiveMessage(type, data) {
     if (type === 'config') {

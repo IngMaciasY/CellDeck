@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Callable, Coroutine
 from typing import TYPE_CHECKING, Any
 
+from phonedeck.obs import obs_service
 from phonedeck.services.mixer import mixer_service
 from phonedeck.services.now_playing import now_playing_service
 from phonedeck.services.pomodoro import pomodoro_service
@@ -20,4 +21,5 @@ BACKGROUND_SERVICES: tuple[Callable[[AppState], Coroutine[Any, Any, None]], ...]
     mixer_service,
     stats_service,
     pomodoro_service,
+    obs_service,
 )

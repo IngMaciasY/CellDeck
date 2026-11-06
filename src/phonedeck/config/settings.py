@@ -49,6 +49,12 @@ class Settings(BaseModel):
     token_ttl_days: int = Field(default=90, ge=1, le=3650)
     load_external_plugins: bool = True
     adb_path: str | None = None
+    # Conexión con OBS (ver phonedeck.obs). Por defecto, OBS en esta misma PC.
+    obs_host: str = "127.0.0.1"
+    obs_port: int = Field(default=4455, ge=1, le=65535)
+    obs_password: str = ""
+    # Hasta qué versión se aplicó la migración de secciones (ver config.migrations).
+    sections_version: int = 0
 
     @field_validator("allowed_url_schemes")
     @classmethod

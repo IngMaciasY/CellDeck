@@ -25,6 +25,7 @@ from phonedeck.plugins.base import ActionParams, validate_action_value
 ID_PATTERN = r"^[A-Za-z0-9_-]{1,40}$"
 HEX_COLOR = r"^#[0-9A-Fa-f]{6}$"
 ICON_PATTERN = r"^[a-z0-9-]{1,40}$"
+MAX_PAGES = 30
 
 WidgetKind = Literal["clock", "stats", "now_playing", "volume", "mixer", "pomodoro", "obs"]
 
@@ -104,7 +105,7 @@ class Config(_Model):
 
     version: Literal[1] = 1
     appearance: Appearance = Field(default_factory=Appearance)
-    pages: list[Page] = Field(min_length=1, max_length=30)
+    pages: list[Page] = Field(min_length=1, max_length=MAX_PAGES)
 
     @model_validator(mode="after")
     def _unique_page_ids(self) -> Self:

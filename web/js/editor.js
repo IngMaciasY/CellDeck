@@ -19,10 +19,11 @@
   const $ = u.$;
 
   const WIDGET_TYPES = [['now_playing', 'Ahora suena'], ['volume', 'Volumen'], ['clock', 'Reloj'],
-    ['stats', 'CPU / RAM'], ['mixer', 'Volume Mixer'], ['pomodoro', 'Pomodoro']];
+    ['stats', 'CPU / RAM'], ['mixer', 'Volume Mixer'], ['pomodoro', 'Pomodoro'],
+    ['obs', 'OBS Studio']];
   const WIDGET_ICONS = { now_playing: 'music', volume: 'volume-2', clock: 'clock', stats: 'cpu',
-    mixer: 'sliders', pomodoro: 'timer' };
-  const WIDGET_HEIGHTS = { now_playing: 2, mixer: 4, pomodoro: 4 };
+    mixer: 'sliders', pomodoro: 'timer', obs: 'video' };
+  const WIDGET_HEIGHTS = { now_playing: 2, mixer: 4, pomodoro: 4, obs: 4 };
 
   const E = {
     active: false,
@@ -266,6 +267,9 @@
         } else if (item.widget === 'pomodoro') {
           optsBox.appendChild(u.el('p', 'field-hint',
             'Los tiempos se ajustan desde el propio widget y se guardan en la PC.'));
+        } else if (item.widget === 'obs') {
+          optsBox.appendChild(u.el('p', 'field-hint',
+            'Mientras exista este widget, el celular puede cambiar la escena de OBS.'));
         }
       }
       body.appendChild(F.field('Widget', F.select(WIDGET_TYPES, item.widget, function (v) {

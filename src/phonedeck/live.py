@@ -9,6 +9,7 @@ Son pocos comandos, con parámetros acotados:
 - ``mixer.mute``  ``{"key": clave, "muted": bool}``   (silenciar una aplicación)
 - ``pomodoro.control`` ``{"action": "start" | "pause" | "resume" | "reset"}``
 - ``pomodoro.config``  ``{"work": min, "short_break": min, "long_break": min}``
+- ``obs.scene``   ``{"name": escena}``    (solo escenas de la lista actual de OBS)
 
 Y solo se aceptan si el widget correspondiente está en la configuración: si el usuario
 quita el widget, el celular deja de poder usar ese control.
@@ -71,6 +72,10 @@ class PomodoroConfig(_Msg):
     long_break: int = Field(ge=1, le=MAX_MINUTES)
 
 
+class ObsScene(_Msg):
+    name: str = Field(min_length=1, max_length=256)
+
+
 # tipo de mensaje → (modelo, widget requerido en la config)
 COMMANDS: dict[str, tuple[type[_Msg], str]] = {
     "volume.set": (VolumeSet, "volume"),
@@ -80,6 +85,7 @@ COMMANDS: dict[str, tuple[type[_Msg], str]] = {
     "mixer.mute": (MixerMute, "mixer"),
     "pomodoro.control": (PomodoroControl, "pomodoro"),
     "pomodoro.config": (PomodoroConfig, "pomodoro"),
+    "obs.scene": (ObsScene, "obs"),
 }
 
 
@@ -138,6 +144,8 @@ async def handle_client_message(state: AppState, ws: WebSocket, raw: str) -> Non
         elif isinstance(cmd, PomodoroConfig):
             state.pomodoro.configure(Durations.model_validate(cmd.model_dump()))
             await publish_pomodoro(state)
+        elif isinstance(cmd, ObsScene):
+            await state.obs.set_scene(cmd.name)
     except PlatformError as exc:
         await _send(ws, "error", {"message": str(exc)})
         return

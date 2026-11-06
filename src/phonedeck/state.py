@@ -14,6 +14,7 @@ from phonedeck import __version__
 from phonedeck.config.settings import Settings, SettingsStore
 from phonedeck.config.store import ConfigStore
 from phonedeck.netinfo import AllowedHosts
+from phonedeck.obs import ObsBridge
 from phonedeck.platform import PlatformBackend, create_backend
 from phonedeck.plugins import PluginRegistry, build_default_registry
 from phonedeck.plugins.loader import load_external_plugins
@@ -58,6 +59,7 @@ class AppState:
     pin_guard: PinGuard
     allowed_hosts: AllowedHosts
     pomodoro: PomodoroTimer
+    obs: ObsBridge
     mode: str
     version: str = __version__
     started_at: float = field(default_factory=time.time)
@@ -119,5 +121,6 @@ def build_state(
         pin_guard=PinGuard(),
         allowed_hosts=AllowedHosts(mode == "wifi", settings.extra_allowed_hosts),
         pomodoro=pomodoro,
+        obs=ObsBridge(hub, lambda: settings_store.settings),
         mode=mode,
     )

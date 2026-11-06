@@ -6,6 +6,7 @@ from phonedeck.api import (
     routes_auth,
     routes_config,
     routes_media,
+    routes_obs,
     routes_pairing,
 )
 
@@ -16,6 +17,7 @@ ROUTERS = (
     routes_media.router,
     routes_pairing.router,
     routes_apps.router,
+    routes_obs.router,
 )
 
 __all__ = ["ROUTERS"]

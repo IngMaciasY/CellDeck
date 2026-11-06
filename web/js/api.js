@@ -76,6 +76,8 @@
       return request('POST', '/api/run', { page: page, item: item, confirmed: !!confirmed });
     },
     plugins: function () { return request('GET', '/api/plugins'); },
-    apps: function () { return request('GET', '/api/apps'); }
+    apps: function () { return request('GET', '/api/apps'); },
+    obsSettings: function () { return request('GET', '/api/obs/settings'); },
+    saveObsSettings: function (body) { return request('PUT', '/api/obs/settings', body); }
   };
 })(window);
