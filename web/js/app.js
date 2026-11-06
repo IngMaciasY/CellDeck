@@ -93,7 +93,8 @@
   }
 
   // ------------------------------------------------- suscripción a datos en vivo
-  const WIDGET_TOPICS = { now_playing: 'media', volume: 'volume', stats: 'stats', mixer: 'mixer' };
+  const WIDGET_TOPICS = { now_playing: 'media', volume: 'volume', stats: 'stats', mixer: 'mixer',
+    pomodoro: 'pomodoro' };
 
   /** Temas en vivo que necesita la página visible (según sus widgets). */
   function topicsForPage(page) {
@@ -266,7 +267,7 @@
   }
 
   // ------------------------------------------------------------ WebSocket
-  const LIVE_TYPES = ['media', 'volume', 'stats', 'mixer'];
+  const LIVE_TYPES = ['media', 'volume', 'stats', 'mixer', 'pomodoro'];
 
   function onLiveMessage(type, data) {
     if (type === 'config') {
@@ -282,7 +283,13 @@
       updateEditButton();
       return;
     }
+    if (type === 'pomodoro.alert') {
+      PD.pomodoro.alert(data);
+      return;
+    }
     if (LIVE_TYPES.indexOf(type) >= 0) {
+      // Vale también al repintar un widget con el último dato: el tiempo se cuenta desde aquí.
+      if (type === 'pomodoro' && data) data.received_at = Date.now();
       state.snapshot[type] = data;
       PD.grid.dispatch(type, data);
     }
@@ -458,6 +465,13 @@
     gestureHandled = true;
     if (u.store.get('nosleep', true)) PD.nosleep.enable();
     if (u.store.get('autofs', false) && !fullscreenElement()) toggleFullscreen();
+    if (hasWidget('pomodoro')) PD.pomodoro.unlockSound();
+  }
+
+  function hasWidget(name) {
+    return !!state.config && state.config.pages.some(function (page) {
+      return page.items.some(function (item) { return item.widget === name; });
+    });
   }
 
   // ----------------------------------------------------------------- menú

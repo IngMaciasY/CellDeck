@@ -7,6 +7,7 @@ import logging
 import socket
 import threading
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -94,10 +95,17 @@ class ServerController:
         self._server: uvicorn.Server | None = None
         self._thread: threading.Thread | None = None
         self._lock = threading.Lock()
+        self._notifier: Callable[[str, str], None] | None = None
 
     @property
     def running(self) -> bool:
         return self._thread is not None and self._thread.is_alive()
+
+    def set_notifier(self, notifier: Callable[[str, str], None]) -> None:
+        """Función que muestra notificaciones de Windows (también tras cada reinicio)."""
+        self._notifier = notifier
+        if self.state is not None:
+            self.state.notifier = notifier
 
     def panel_url(self) -> str:
         return f"http://127.0.0.1:{self.port}/"
@@ -111,6 +119,7 @@ class ServerController:
         """
         with self._lock:
             state, server, host, port = _build_server(self.options)
+            state.notifier = self._notifier
             thread = threading.Thread(target=server.run, name="phonedeck-server", daemon=True)
             thread.start()
             deadline = time.monotonic() + START_TIMEOUT_S

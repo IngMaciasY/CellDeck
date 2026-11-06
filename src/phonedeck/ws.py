@@ -36,7 +36,7 @@ class WebSocketHub:
         # (compatibilidad con clientes antiguos).
         self._clients: dict[WebSocket, frozenset[str]] = {}
         self._snapshot: dict[str, Any] = {}
-        # Temas cuyo valor caduca (el tiempo restante del Pomodoro): se calculan al enviarlos.
+        # Temas cuyo valor caduca (el tiempo restante del Pomodoro): se calculan al suscribirse.
         self._providers: dict[str, Callable[[], Any]] = {}
         self._wakeup = asyncio.Event()
 
@@ -63,17 +63,13 @@ class WebSocketHub:
         self._wakeup.set()
 
     def set_provider(self, topic: str, provider: Callable[[], Any]) -> None:
-        """Hace que ``topic`` se calcule en cada alta en vez de reenviar una copia guardada."""
+        """Hace que ``topic`` se calcule en cada suscripción en vez de guardar una copia."""
         self._providers[topic] = provider
-
-    def _current(self) -> dict[str, Any]:
-        """Último valor de cada tema, con los temas dinámicos recién calculados."""
-        return self._snapshot | {topic: fn() for topic, fn in self._providers.items()}
 
     async def register(self, ws: WebSocket) -> None:
         self._clients[ws] = LIVE_TOPICS
         log.info("Cliente WebSocket conectado (%d en total)", len(self._clients))
-        for msg_type, data in self._current().items():
+        for msg_type, data in self._snapshot.items():
             await self._send(ws, msg_type, data)
         self.wake()
 
@@ -89,10 +85,11 @@ class WebSocketHub:
         wanted = frozenset(topics & LIVE_TOPICS)
         added = wanted - self._clients[ws]
         self._clients[ws] = wanted
-        current = self._current()
         for topic in sorted(added):
-            if topic in current:
-                await self._send(ws, topic, current[topic])
+            if topic in self._snapshot:
+                await self._send(ws, topic, self._snapshot[topic])
+        for topic in sorted(wanted & self._providers.keys()):
+            await self._send(ws, topic, self._providers[topic]())
         if added:
             self.wake()  # que los servicios lean ya el dato en vez de esperar
 

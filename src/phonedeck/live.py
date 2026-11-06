@@ -7,6 +7,8 @@ Son pocos comandos, con parámetros acotados:
 - ``media``       ``{"command": MediaKey}`` (controles del widget "ahora suena")
 - ``mixer.set``   ``{"key": clave, "value": 0..100}`` (volumen de una aplicación)
 - ``mixer.mute``  ``{"key": clave, "muted": bool}``   (silenciar una aplicación)
+- ``pomodoro.control`` ``{"action": "start" | "pause" | "resume" | "reset"}``
+- ``pomodoro.config``  ``{"work": min, "short_break": min, "long_break": min}``
 
 Y solo se aceptan si el widget correspondiente está en la configuración: si el usuario
 quita el widget, el celular deja de poder usar ese control.
@@ -16,12 +18,14 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import WebSocket
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from phonedeck.platform.base import MediaKey, PlatformError
+from phonedeck.pomodoro import MAX_MINUTES, Durations
+from phonedeck.services.pomodoro import publish as publish_pomodoro
 from phonedeck.services.volume import volume_payload
 from phonedeck.state import AppState
 
@@ -57,6 +61,16 @@ class MixerMute(_Msg):
     muted: bool
 
 
+class PomodoroControl(_Msg):
+    action: Literal["start", "pause", "resume", "reset"]
+
+
+class PomodoroConfig(_Msg):
+    work: int = Field(ge=1, le=MAX_MINUTES)
+    short_break: int = Field(ge=1, le=MAX_MINUTES)
+    long_break: int = Field(ge=1, le=MAX_MINUTES)
+
+
 # tipo de mensaje → (modelo, widget requerido en la config)
 COMMANDS: dict[str, tuple[type[_Msg], str]] = {
     "volume.set": (VolumeSet, "volume"),
@@ -64,6 +78,8 @@ COMMANDS: dict[str, tuple[type[_Msg], str]] = {
     "media": (MediaCommand, "now_playing"),
     "mixer.set": (MixerSet, "mixer"),
     "mixer.mute": (MixerMute, "mixer"),
+    "pomodoro.control": (PomodoroControl, "pomodoro"),
+    "pomodoro.config": (PomodoroConfig, "pomodoro"),
 }
 
 
@@ -116,6 +132,12 @@ async def handle_client_message(state: AppState, ws: WebSocket, raw: str) -> Non
         elif isinstance(cmd, MixerMute):
             await backend.set_app_mute(cmd.key, cmd.muted)
             state.hub.wake()  # el botón debe reaccionar ya; el slider ya se mueve solo
+        elif isinstance(cmd, PomodoroControl):
+            getattr(state.pomodoro, cmd.action)()
+            await publish_pomodoro(state)
+        elif isinstance(cmd, PomodoroConfig):
+            state.pomodoro.configure(Durations.model_validate(cmd.model_dump()))
+            await publish_pomodoro(state)
     except PlatformError as exc:
         await _send(ws, "error", {"message": str(exc)})
         return

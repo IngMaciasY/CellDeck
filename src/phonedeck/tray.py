@@ -46,6 +46,7 @@ def _open_path(path: Path) -> None:
 
 class TrayApp:
     def __init__(self, controller: ServerController, data_dir: Path, log_file: Path) -> None:
+        controller.set_notifier(self.notify)
         self.controller = controller
         self.data_dir = data_dir
         self.log_file = log_file

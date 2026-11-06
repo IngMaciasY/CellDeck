@@ -19,10 +19,10 @@
   const $ = u.$;
 
   const WIDGET_TYPES = [['now_playing', 'Ahora suena'], ['volume', 'Volumen'], ['clock', 'Reloj'],
-    ['stats', 'CPU / RAM'], ['mixer', 'Volume Mixer']];
+    ['stats', 'CPU / RAM'], ['mixer', 'Volume Mixer'], ['pomodoro', 'Pomodoro']];
   const WIDGET_ICONS = { now_playing: 'music', volume: 'volume-2', clock: 'clock', stats: 'cpu',
-    mixer: 'sliders' };
-  const WIDGET_HEIGHTS = { now_playing: 2, mixer: 4 };
+    mixer: 'sliders', pomodoro: 'timer' };
+  const WIDGET_HEIGHTS = { now_playing: 2, mixer: 4, pomodoro: 4 };
 
   const E = {
     active: false,
@@ -263,6 +263,9 @@
         } else if (item.widget === 'mixer') {
           optsBox.appendChild(u.el('p', 'field-hint',
             'Mientras exista este widget, el celular puede cambiar el volumen de cada aplicación.'));
+        } else if (item.widget === 'pomodoro') {
+          optsBox.appendChild(u.el('p', 'field-hint',
+            'Los tiempos se ajustan desde el propio widget y se guardan en la PC.'));
         }
       }
       body.appendChild(F.field('Widget', F.select(WIDGET_TYPES, item.widget, function (v) {

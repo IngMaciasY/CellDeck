@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import time
-from collections.abc import Coroutine
+from collections.abc import Callable, Coroutine
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -18,6 +18,7 @@ from phonedeck.platform import PlatformBackend, create_backend
 from phonedeck.plugins import PluginRegistry, build_default_registry
 from phonedeck.plugins.loader import load_external_plugins
 from phonedeck.plugins.runner import ActionRunner
+from phonedeck.pomodoro import PomodoroTimer
 from phonedeck.security import PinGuard, TokenManager
 from phonedeck.ws import WebSocketHub
 
@@ -56,6 +57,7 @@ class AppState:
     tokens: TokenManager
     pin_guard: PinGuard
     allowed_hosts: AllowedHosts
+    pomodoro: PomodoroTimer
     mode: str
     version: str = __version__
     started_at: float = field(default_factory=time.time)
@@ -63,6 +65,8 @@ class AppState:
     # Bucle de eventos del servidor (se fija al arrancar). La bandeja vive en otro hilo y
     # lo usa para ejecutar corrutinas de forma segura.
     loop: asyncio.AbstractEventLoop | None = None
+    # Notificación de Windows ``(mensaje, título)``: la pone la bandeja si la hay.
+    notifier: Callable[[str, str], None] | None = None
 
     @property
     def settings(self) -> Settings:
@@ -100,6 +104,9 @@ def build_state(
 
     backend = backend or create_backend(fake=fake)
     log.info("Backend de plataforma: %s", backend.name)
+    hub = WebSocketHub()
+    pomodoro = PomodoroTimer(data_dir / "pomodoro.json")
+    hub.set_provider("pomodoro", pomodoro.payload)
     return AppState(
         data_dir=data_dir,
         settings_store=settings_store,
@@ -107,9 +114,10 @@ def build_state(
         registry=registry,
         backend=backend,
         runner=ActionRunner(registry, backend, lambda: settings_store.settings),
-        hub=WebSocketHub(),
+        hub=hub,
         tokens=TokenManager(lambda: settings_store.settings.secret),
         pin_guard=PinGuard(),
         allowed_hosts=AllowedHosts(mode == "wifi", settings.extra_allowed_hosts),
+        pomodoro=pomodoro,
         mode=mode,
     )

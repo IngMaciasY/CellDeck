@@ -34,7 +34,7 @@ def minimal(action: dict[str, Any]) -> dict[str, Any]:
 
 def test_default_config_is_valid(registry: PluginRegistry) -> None:
     config = parse(registry, default_config_data())
-    assert [p.id for p in config.pages] == ["media", "pc", "mixer"]
+    assert [p.id for p in config.pages] == ["media", "pc", "mixer", "pomodoro"]
     item = config.find_item("pc", "notepad-demo")
     assert isinstance(item, ButtonItem)
     assert isinstance(item.action, MacroParams)

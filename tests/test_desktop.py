@@ -159,6 +159,9 @@ class FakeController:
     def panel_url(self) -> str:
         return "http://127.0.0.1:8765/"
 
+    def set_notifier(self, notifier: Any) -> None:
+        self.state.notifier = notifier
+
 
 @pytest.fixture
 def tray(state: AppState, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Any:

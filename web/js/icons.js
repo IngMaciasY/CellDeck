@@ -70,6 +70,7 @@
     'terminal': '<polyline points="4 17 10 11 4 5"/><path d="M12 19h8"/>',
     'trash': '<path d="M3 6h18M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6M9 6V4h6v2"/>',
     'usb': '<circle cx="12" cy="20" r="2"/><path d="M12 18V3M9 6l3-3 3 3M12 14l-4-2V9M12 12l4-2V8"/>',
+    'timer': '<circle cx="12" cy="14" r="8"/><path d="M12 10v4l2 2M9 2h6"/>',
     'video': '<rect x="2" y="6" width="14" height="12" rx="2"/><polygon points="22 8 16 12 22 16 22 8"/>',
     'volume-1': SPEAKER + '<path d="M15.5 8.5a5 5 0 0 1 0 7"/>',
     'volume-2': SPEAKER + '<path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/>',
