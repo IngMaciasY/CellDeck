@@ -12,6 +12,7 @@ from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
+from websockets.asyncio.server import serve
 
 from phonedeck import obs as obs_module
 from phonedeck.config.settings import Settings
@@ -209,15 +210,62 @@ async def test_retrying_keeps_the_failure_visible() -> None:
 
 
 def test_new_clients_do_not_count_as_obs_viewers(client: TestClient, state: AppState) -> None:
+    client.portal.call(state.hub.broadcast, "obs", {"status": "online"})  # type: ignore[union-attr]
     with client.websocket_connect(f"{WS_URL}?token={local_token(client)}") as ws:
         ws.send_json({"type": "ping"})
-        receive_until(ws, "pong")
+        assert ws.receive_json()["type"] == "hello"
+        assert ws.receive_json()["type"] == "pong"  # sin el "obs" guardado: no lo pidió
         assert state.hub.subscribers("obs") == 0
         assert state.hub.subscribers("mixer") == 0
         ws.send_json({"type": "subscribe", "topics": ["obs"]})
         ws.send_json({"type": "ping"})
         receive_until(ws, "pong")
         assert state.hub.subscribers("obs") == 1
+
+
+async def test_settings_saved_during_a_connection_attempt_apply_at_once(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(obs_module, "MIN_RETRY_S", 30.0)
+    monkeypatch.setattr(obs_module, "MAX_RETRY_S", 30.0)
+    fake = FakeObs(list(SCENES), password="secreta")
+    fake.hello_delay = 0.2
+    await fake.start()
+    try:
+        async with running(Harness(fake.port, "mala")) as h:
+            await asyncio.sleep(0.05)  # conectando con la contraseña vieja
+            h.settings = Settings(obs_port=fake.port, obs_password="secreta")
+            await h.bridge.reconnect()
+            await h.online()  # sin esperar los 30 s
+    finally:
+        await fake.stop()
+
+
+@pytest.mark.parametrize("reply", ["[]", '{"op": 0, "d": null}', "no es json", '"texto"'])
+async def test_survives_a_service_that_is_not_obs(reply: str) -> None:
+    async def not_obs(ws: Any) -> None:
+        await ws.send(reply)
+        await asyncio.sleep(0.05)
+
+    async with serve(not_obs, "127.0.0.1", 0) as server:
+        port = server.sockets[0].getsockname()[1]
+        h = Harness(port)
+        task = asyncio.create_task(h.bridge.run())
+        await h.until(lambda p: p["status"] == "offline")
+        await asyncio.sleep(0.05)
+        assert not task.done()
+        task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await task
+
+
+async def test_failed_scene_list_is_not_shown_as_online(server: FakeObs) -> None:
+    server.fail_scene_list = True
+    async with running(Harness(server.port)) as h:
+        await h.until(lambda p: p["status"] == "offline")
+        server.fail_scene_list = False
+        await h.online()
+        assert h.bridge.payload()["scenes"] == SCENES
 
 
 async def test_closes_after_nobody_is_watching(

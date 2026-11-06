@@ -106,6 +106,7 @@ class ObsBridge:
         self._current: str | None = None
         self._pending: dict[str, asyncio.Future[dict[str, Any]]] = {}
         self._reached_online = False
+        self._settings_changed = False
         self._last_wanted = 0.0
         self._published: dict[str, Any] | None = None
 
@@ -155,6 +156,7 @@ class ObsBridge:
 
     async def reconnect(self) -> None:
         """Vuelve a conectar ya, con los ajustes actuales (acaban de cambiar)."""
+        self._settings_changed = True
         if self._ws is not None:
             await self._ws.close()
         self.hub.wake()
@@ -176,15 +178,26 @@ class ObsBridge:
                 await self.hub.wait_for_change(WAIT_IDLE_S)
                 continue
             self._reached_online = False
+            self._settings_changed = False
             try:
                 await self._session()
                 delay = MIN_RETRY_S
                 continue
             except ObsAuthError as exc:
                 await self._set_status(ObsStatus.AUTH_FAILED, str(exc))
-            except (OSError, TimeoutError, WebSocketException, ValueError, KeyError, TypeError):
+            except (
+                OSError,
+                TimeoutError,
+                WebSocketException,
+                ValueError,
+                KeyError,
+                TypeError,
+                AttributeError,  # JSON con otra forma: en ese puerto puede haber otro servicio
+            ):
                 log.debug("Sin conexión con OBS", exc_info=True)
                 await self._set_status(ObsStatus.OFFLINE, OFFLINE_MESSAGE)
+            if self._settings_changed:
+                continue  # el intento fallido usaba los ajustes viejos
             delay = MIN_RETRY_S if self._reached_online else min(MAX_RETRY_S, delay * 2)
             # Un celular que entra a la sección o unos ajustes nuevos cortan la espera.
             await self.hub.wait_for_change(delay)
@@ -203,6 +216,8 @@ class ObsBridge:
             proxy=None,
         ) as ws:
             await self._identify(ws, settings.obs_password)
+            if self._settings_changed:
+                return  # los ajustes cambiaron mientras se conectaba
             self._ws = ws
             self._reached_online = True
             log.info("Conectado a OBS en %s:%d", settings.obs_host, settings.obs_port)
@@ -285,6 +300,8 @@ class ObsBridge:
                 future.set_result(response.get("requestStatus", {}))
             return
         if response.get("requestType") == "GetSceneList":
+            if not response.get("requestStatus", {}).get("result"):
+                raise ValueError("OBS no entregó las escenas")  # p. ej. aún está cargando
             data = response.get("responseData") or {}
             self._scenes = scene_names(data.get("scenes") or [])
             self._current = data.get("currentProgramSceneName")

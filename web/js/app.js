@@ -465,7 +465,13 @@
     gestureHandled = true;
     if (u.store.get('nosleep', true)) PD.nosleep.enable();
     if (u.store.get('autofs', false) && !fullscreenElement()) toggleFullscreen();
-    if (hasWidget('pomodoro')) PD.pomodoro.unlockSound();
+  }
+
+  /** Espera a un toque con el widget ya en la config (el primero puede ser en el PIN). */
+  function unlockAlertSound() {
+    if (!hasWidget('pomodoro')) return;
+    PD.pomodoro.unlockSound();
+    document.removeEventListener('click', unlockAlertSound, true);
   }
 
   function hasWidget(name) {
@@ -712,6 +718,7 @@
     document.addEventListener('fullscreenchange', updateFullscreenIcon);
     document.addEventListener('webkitfullscreenchange', updateFullscreenIcon);
     document.addEventListener('click', onUserGesture, true);
+    document.addEventListener('click', unlockAlertSound, true);
     $('overlay-retry').addEventListener('click', function () {
       if (state.connection && state.config) state.connection.retryNow();
       else start();

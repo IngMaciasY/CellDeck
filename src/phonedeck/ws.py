@@ -72,8 +72,10 @@ class WebSocketHub:
     async def register(self, ws: WebSocket) -> None:
         self._clients[ws] = INITIAL_TOPICS
         log.info("Cliente WebSocket conectado (%d en total)", len(self._clients))
-        for msg_type, data in self._snapshot.items():
-            await self._send(ws, msg_type, data)
+        # Copia: un servicio puede publicar un tema nuevo mientras se envía esto.
+        for msg_type, data in list(self._snapshot.items()):
+            if msg_type in INITIAL_TOPICS or msg_type not in LIVE_TOPICS:
+                await self._send(ws, msg_type, data)
         self.wake()
 
     def unregister(self, ws: WebSocket) -> None:

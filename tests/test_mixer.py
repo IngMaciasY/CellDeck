@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+import os
+import sys
+
+import pytest
 from fastapi.testclient import TestClient
 
 from phonedeck.platform.audio import SYSTEM_KEY, SessionRow, app_key, group_sessions
@@ -141,3 +145,31 @@ def test_mixer_icon_only_for_live_apps(
     assert res.status_code == 200
     assert res.content == PNG
     assert client.get(f"/api/mixer/icon/otra?token={token}").status_code == 404
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="lee sesiones de Windows")
+def test_one_dying_session_does_not_empty_the_list(monkeypatch: pytest.MonkeyPatch) -> None:
+    from pycaw.pycaw import AudioUtilities
+
+    from phonedeck.platform.windows_audio import AudioMixer
+
+    class Volume:
+        def GetMasterVolume(self) -> float:
+            return 0.5
+
+        def GetMute(self) -> int:
+            return 0
+
+    class Dying(Volume):
+        def GetMasterVolume(self) -> float:
+            raise OSError("sesión cerrada")
+
+    class Session:
+        def __init__(self, pid: int, volume: Volume) -> None:
+            self.State = 1
+            self.ProcessId = pid
+            self.SimpleAudioVolume = volume
+
+    sessions = [Session(0, Volume()), Session(os.getpid(), Dying())]
+    monkeypatch.setattr(AudioUtilities, "GetAllSessions", lambda: sessions)
+    assert [a.key for a in AudioMixer().list_apps()] == [SYSTEM_KEY]

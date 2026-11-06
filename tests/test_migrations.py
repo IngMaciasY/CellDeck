@@ -6,7 +6,10 @@ import json
 from pathlib import Path
 from typing import Any
 
+import pytest
+
 from phonedeck.config.migrations import SECTIONS_VERSION
+from phonedeck.config.store import ConfigStore
 from phonedeck.platform.fake import FakeBackend
 from phonedeck.state import AppState, build_state
 
@@ -59,6 +62,35 @@ def test_page_id_conflict_gets_a_new_id(tmp_path: Path) -> None:
     state = boot(tmp_path, old_config(id="obs", name="Otra cosa"))
     assert ids(state) == ["obs", "mixer", "pomodoro", "obs-2"]
     assert state.config_store.config.pages[0].name == "Otra cosa"
+
+
+def test_does_not_bring_back_a_removed_volume_control(tmp_path: Path) -> None:
+    state = boot(tmp_path, old_config())
+    assert state.config_store.config.has_widget("mixer")
+    assert not state.config_store.config.has_widget("volume")
+
+
+def test_keeps_volume_widget_if_the_user_has_it(tmp_path: Path) -> None:
+    widget = {"kind": "widget", "id": "v", "widget": "volume", "w": 3, "h": 1}
+    state = boot(tmp_path, old_config(items=[widget]))
+    mixer = state.config_store.config.find_page("mixer")
+    assert mixer is not None
+    assert len(mixer.items) == 2
+
+
+def test_write_failure_does_not_stop_the_app(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def denied(*_args: Any, **_kwargs: Any) -> None:
+        raise PermissionError("config.json está bloqueado")
+
+    monkeypatch.setattr(ConfigStore, "save", denied)
+    state = boot(tmp_path, old_config())
+    assert ids(state) == ["mio"]
+    assert state.settings.sections_version == 0  # se reintentará
+
+    monkeypatch.undo()
+    assert ids(boot(tmp_path)) == ["mio", "mixer", "pomodoro", "obs"]
 
 
 def test_invalid_config_is_left_alone(tmp_path: Path) -> None:

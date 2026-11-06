@@ -139,10 +139,15 @@ class PomodoroTimer:
     def reset(self) -> None:
         """Vuelve al inicio del periodo; si ya estaba ahí, al inicio del ciclo completo."""
         if self.status is Status.IDLE:
-            self.completed = 0
-            self._begin(Phase.WORK, Status.IDLE)
+            self.stop()
         else:
             self._begin(self.phase, Status.IDLE)
+            self._changed.set()
+
+    def stop(self) -> None:
+        """Deja el temporizador como recién abierto."""
+        self.completed = 0
+        self._begin(Phase.WORK, Status.IDLE)
         self._changed.set()
 
     def configure(self, durations: Durations) -> None:

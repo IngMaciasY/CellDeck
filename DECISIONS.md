@@ -18,6 +18,11 @@ Registro de lo que se eligió, lo que se descartó y por qué. Lo más reciente 
   de seguridad, y lo marca en `settings.json` para no repetirla.
 - **Descartado:** que cada usuario las agregue con el editor. Por WiFi la edición está
   desactivada por defecto, así que muchos nunca las verían.
+- **Consecuencia aceptada:** tras actualizar, los celulares emparejados ganan los controles del
+  mezclador y de OBS sin que nadie los active. Se quitan borrando esas páginas.
+- **Volumen general:** la migración no lo añade si el usuario ya lo había quitado, porque quitar
+  un widget retira ese control al celular.
+- **Si la escritura falla:** PhoneDeck arranca igual y reintenta en el siguiente inicio.
 
 ### Volume Mixer
 
@@ -43,6 +48,8 @@ Registro de lo que se eligió, lo que se descartó y por qué. Lo más reciente 
   copia guardada, que tendría un tiempo restante viejo.
 - **Reiniciar:** con el periodo en marcha o en pausa, vuelve al inicio de ese periodo. Si ya
   estaba al inicio, reinicia el ciclo completo. Así no hace falta otro botón.
+- **Sin widget, se detiene:** si se borra el widget con un periodo en marcha, el temporizador se
+  para al terminar ese periodo, porque nadie podría pararlo desde el celular.
 - **Avisos:** vibración, sonido y aviso en pantalla en el celular, más notificación de Windows.
 - **Descartado:** notificación del sistema en el celular. Por WiFi (HTTP) el navegador la bloquea.
 

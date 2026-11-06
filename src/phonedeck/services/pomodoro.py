@@ -53,8 +53,13 @@ async def pomodoro_service(state: AppState) -> None:
         await timer.wait_for_change()
         try:
             transition = timer.expire()
-            if transition is not None:
+            if transition is None:
+                continue
+            if state.config_store.config.has_widget("pomodoro"):
                 await announce(state, transition)
+            else:
+                # Sin el widget ya nadie podría pararlo: no se encadena otro periodo.
+                timer.stop()
         except asyncio.CancelledError:
             raise
         except Exception:

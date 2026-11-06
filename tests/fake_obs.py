@@ -6,6 +6,7 @@ eventos). No sustituye a una prueba con OBS real.
 
 from __future__ import annotations
 
+import asyncio
 import base64
 import hashlib
 import json
@@ -30,6 +31,8 @@ class FakeObs:
         self.password = password
         self.port = port
         self.subscriptions: int | None = None
+        self.hello_delay = 0.0
+        self.fail_scene_list = False
         self.requests: list[str] = []
         self.clients: set[ServerConnection] = set()
         self._server: Server | None = None
@@ -59,6 +62,7 @@ class FakeObs:
         await self.emit("CurrentProgramSceneChanged", {"sceneName": name, "sceneUuid": "x"})
 
     async def _handle(self, ws: ServerConnection) -> None:
+        await asyncio.sleep(self.hello_delay)
         hello: dict[str, Any] = {"obsWebSocketVersion": "5.5.0", "rpcVersion": 1}
         if self.password:
             hello["authentication"] = {"challenge": CHALLENGE, "salt": SALT}
@@ -84,7 +88,9 @@ class FakeObs:
             "requestId": request["requestId"],
             "requestStatus": {"result": True, "code": 100},
         }
-        if kind == "GetSceneList":
+        if kind == "GetSceneList" and self.fail_scene_list:
+            response["requestStatus"] = {"result": False, "code": 207}  # NotReady
+        elif kind == "GetSceneList":
             count = len(self.scenes)
             scenes = [
                 {"sceneIndex": count - 1 - i, "sceneName": name, "sceneUuid": str(i)}

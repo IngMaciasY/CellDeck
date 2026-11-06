@@ -46,21 +46,26 @@ def add_new_sections(store: ConfigStore, settings_store: SettingsStore) -> None:
         if page["id"] in NEW_SECTIONS and not config.has_widget(NEW_SECTIONS[page["id"]])
     ]
     room = MAX_PAGES - len(config.pages)
+    if not config.has_widget("volume"):
+        # Quitar un widget retira ese control al celular: la migración no debe devolverlo.
+        for page in pages:
+            page["items"] = [i for i in page["items"] if i.get("widget") != "volume"]
     if len(pages) > room:
         log.warning("No caben todas las secciones nuevas: el máximo son %d páginas", MAX_PAGES)
         pages = pages[: max(0, room)]
 
-    if pages:
-        data = config.to_json_dict()
-        taken = {page["id"] for page in data["pages"]}
-        for page in pages:
-            page["id"] = _unique_id(page["id"], taken)
-            taken.add(page["id"])
-        data["pages"] += pages
-        try:
+    # Si falla (archivo de solo lectura, antivirus...) PhoneDeck debe arrancar igual: se
+    # reintentará en el siguiente inicio.
+    try:
+        if pages:
+            data = config.to_json_dict()
+            taken = {page["id"] for page in data["pages"]}
+            for page in pages:
+                page["id"] = _unique_id(page["id"], taken)
+                taken.add(page["id"])
+            data["pages"] += pages
             store.save(store.parse(data))
-        except ConfigError:
-            log.exception("No se pudieron añadir las secciones nuevas")
-            return
-        log.info("Secciones nuevas añadidas: %s", ", ".join(p["name"] for p in pages))
-    settings_store.update(sections_version=SECTIONS_VERSION)
+            log.info("Secciones nuevas añadidas: %s", ", ".join(p["name"] for p in pages))
+        settings_store.update(sections_version=SECTIONS_VERSION)
+    except (ConfigError, OSError):
+        log.exception("No se pudieron añadir las secciones nuevas")

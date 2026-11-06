@@ -173,6 +173,21 @@ async def test_service_wakes_exactly_at_the_end(state: AppState) -> None:
     assert [t for t, _ in sent] == ["pomodoro", "pomodoro.alert"]
 
 
+async def test_stops_at_period_end_if_widget_was_removed(state: AppState) -> None:
+    """Sin widget nadie puede pararlo: no debe seguir avisando para siempre."""
+    config = state.config_store.config
+    for page in config.pages:
+        page.items = [i for i in page.items if getattr(i, "widget", "") != "pomodoro"]
+    state.pomodoro._begin(Phase.WORK, Status.RUNNING)
+    state.pomodoro._ends_at = state.pomodoro._clock() + 0.05
+    sent = spy_broadcasts(state)
+    task = asyncio.create_task(pomodoro_service(state))
+    await asyncio.sleep(0.2)
+    task.cancel()
+    assert state.pomodoro.status is Status.IDLE
+    assert sent == []
+
+
 async def test_announce_notifies_windows_and_survives_failure(state: AppState) -> None:
     shown: list[tuple[str, str]] = []
     state.notifier = lambda message, title: shown.append((message, title))

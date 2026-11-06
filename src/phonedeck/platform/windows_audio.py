@@ -93,17 +93,20 @@ class AudioMixer:
             if who is None:
                 continue
             pids.add(pid)
-            volume = session.SimpleAudioVolume
-            controls.setdefault(who.key, []).append(volume)
-            rows.append(
-                SessionRow(
+            try:
+                volume = session.SimpleAudioVolume
+                row = SessionRow(
                     who.key,
                     who.name,
                     who.path,
                     float(volume.GetMasterVolume()),
                     bool(volume.GetMute()),
                 )
-            )
+            except Exception:  # la sesión murió ahora mismo: no debe vaciar toda la lista
+                log.debug("Sesión de audio perdida al leerla", exc_info=True)
+                continue
+            controls.setdefault(who.key, []).append(volume)
+            rows.append(row)
         self._controls = controls
         # Un PID que dejó de sonar se olvida: así no se confunde si Windows lo reutiliza.
         self._identities = {pid: who for pid, who in self._identities.items() if pid in pids}
