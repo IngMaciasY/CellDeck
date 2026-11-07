@@ -2,6 +2,102 @@
 
 Registro de lo que se eligió, lo que se descartó y por qué. Lo más reciente va primero.
 
+## Spotify y menú de engranaje (2026-11-07)
+
+### Cómo mostrar Spotify
+
+- **Elegido:** interfaz propia sobre la Web API, con la PC de puente, igual que OBS. Es lo único
+  que mantiene el estilo del Deck y permite controlar la música de la PC.
+- **Descartado:** Web Player en un iframe. Comprobado el 2026-11-07: `open.spotify.com` envía
+  `frame-ancestors` y el navegador lo rechaza.
+- **Descartado:** Spotify Embed. Tiene el aspecto de Spotify, carga una playlist por iframe y
+  obliga a abrir la CSP. Sonaría en el celular, y por WiFi (HTTP) probablemente solo clips de
+  menos de 30 s, porque el audio cifrado pide un contexto seguro. Esto último no se probó.
+- **Descartado:** Web Playback SDK. Convertiría el celular en reproductor, y PhoneDeck controla
+  la PC.
+
+### Autenticación
+
+- **Elegido:** OAuth 2.0 con PKCE. Sin `client_secret`, que en un proyecto abierto no se podría
+  guardar en ningún sitio.
+- **Elegido:** un Client ID por usuario. El modo de desarrollo admite 5 usuarios por app, y salir
+  de él exige ser una organización con al menos 250 000 usuarios activos al mes.
+- **Descartado:** un Client ID común en el repositorio. Dejaría de servir con la sexta persona y
+  obligaría a autorizar a cada usuario a mano.
+- **Solo PC o USB:** Spotify solo admite `http` en la dirección de retorno si es `127.0.0.1`.
+  **Descartado:** servir PhoneDeck por HTTPS, que exigiría certificados en cada celular.
+- **Tokens:** el de acceso vive en memoria; el de renovación, en `settings.json` sin cifrar, igual
+  que la contraseña de OBS y por la misma razón.
+- **Renovación con cerrojo:** con PKCE el token puede rotar y el anterior deja de valer. Dos
+  renovaciones simultáneas expulsarían al usuario.
+- **Sesión rechazada:** si Spotify responde `invalid_grant` se borra el token y se pide volver a
+  vincular. Los fallos de red no lo borran.
+- **`state` de un solo uso:** impide que otra web vincule en esta PC una cuenta ajena. La ruta de
+  retorno no lleva token de PhoneDeck porque quien llega es el navegador, desde Spotify.
+- **Registro:** el filtro de los logs oculta también `code` y `state` del retorno.
+
+### Permisos y privacidad
+
+- **Elegido:** cuatro permisos, dos de lectura de playlists y dos de reproducción. El brief pedía
+  solo lectura, pero el usuario eligió controlar la música de la PC.
+- **Consecuencia aceptada:** cualquier celular emparejado ve las playlists privadas, como con OBS.
+  **Descartado:** limitarlas a PC o USB. Se retira el acceso quitando el widget.
+- **Sin widget, sin datos:** las rutas y comandos exigen el widget, igual que el resto de controles.
+
+### Datos
+
+- **Playlists que solo se siguen:** Spotify solo entrega canciones de playlists propias o
+  colaborativas. Se muestran con un aviso y se pueden reproducir o abrir.
+  **Descartado:** ocultarlas, porque desaparecerían listas que el usuario reconoce como suyas.
+- **Por HTTP, no por WebSocket:** playlists y canciones son consultas paginadas. Por WebSocket
+  solo va el estado, que sí cambia solo.
+- **Estado bajo demanda:** el reproductor se consulta cada 5 s solo si alguien mira la sección.
+- **Campos viejos y nuevos:** se lee `items` y, si falta, `tracks`, por el cambio de febrero de 2026.
+
+### Portadas
+
+- **Elegido:** pasan por la PC con una clave opaca, como los iconos del mezclador. El celular nunca
+  envía una URL, la CSP no cambia y funciona con un celular por USB sin Internet.
+- **Descartado:** añadir `i.scdn.co` a la CSP. Las portadas llegan de varios dominios y el celular
+  necesitaría Internet propio.
+- **Límites del proxy:** solo HTTPS a dominios de Spotify, sin seguir redirecciones, solo formatos
+  de mapa de bits, 2 MB por imagen, 16 MB de caché y 6 descargas a la vez.
+
+### Reproducción
+
+- **Órdenes en segundo plano:** Spotify puede tardar segundos. Si se esperaran, el volumen y demás
+  controles de ese celular quedarían bloqueados.
+- **Sin dispositivo activo:** se reintenta indicando uno, con preferencia por la PC. Esta respuesta
+  (404) no figura en la documentación de Spotify y no se ha probado contra el servicio real.
+- **Abrir en la PC:** primero con la app; sin ella, en el navegador. Respeta los esquemas permitidos.
+
+### Marca
+
+- **Logo:** archivos oficiales sin alterar, blanco en temas oscuros y negro en el claro.
+  **Descartado:** el verde, que Spotify reserva para fondos negros o blancos puros, y nuestros
+  fondos no lo son. Mismo motivo por el que el botón verde de Multimedia no lleva el logo.
+- **Pestaña:** usa solo el icono por falta de espacio, a 22 px. Dentro de la sección va el logo
+  completo como atribución.
+
+### Instalaciones existentes
+
+- **Elegido:** cada sección guarda la versión en la que apareció y solo se añaden las de versiones
+  nuevas. **Descartado:** subir `SECTIONS_VERSION` sin más, que devolvería Mixer, Pomodoro u OBS a
+  quien los borró.
+
+### Sección a pantalla completa
+
+- **Elegido:** sola en su página, la sección mide justo el alto visible. Las filas del grid son
+  para botones: en horizontal dejaban el reproductor fuera de la pantalla.
+
+### Engranaje
+
+- **Elegido:** los tres botones pasan a un menú que conserva sus ID, así su lógica no cambia.
+- **Opciones que no aplican:** se ocultan. Si solo queda Ajustes, el engranaje lo abre directamente.
+  **Descartado:** mostrarlas desactivadas, que ocupa sitio con opciones que nunca se podrán usar.
+- **Tocar fuera solo cierra:** el toque no llega a lo que hay debajo. Debajo hay botones como
+  Apagar; cerrar un menú no debe pulsarlos. Cuesta un toque más para cambiar de pestaña.
+
 ## Volume Mixer, Pomodoro y OBS (2026-11-06)
 
 ### Arquitectura general

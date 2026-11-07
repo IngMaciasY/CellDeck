@@ -22,9 +22,15 @@
       <nav id="tabs" class="tabs" role="tablist" aria-label="Páginas"></nav>
       <div class="bar-actions">
         <span id="conn" class="conn conn-connecting" role="status" aria-label="Conectando"></span>
-        <button id="btn-edit" class="icon-btn hidden" type="button" aria-label="Editar"></button>
-        <button id="btn-fullscreen" class="icon-btn" type="button" aria-label="Pantalla completa"></button>
-        <button id="btn-menu" class="icon-btn" type="button" aria-label="Menú"></button>
+        <div class="gear">
+          <button id="btn-gear" class="icon-btn" type="button" aria-label="Configuración"
+                  aria-haspopup="true" aria-expanded="false" aria-controls="gear-menu"></button>
+          <div id="gear-menu" class="gear-menu" role="menu" aria-label="Configuración">
+            <button id="btn-edit" class="gear-item hidden" type="button" role="menuitem"></button>
+            <button id="btn-fullscreen" class="gear-item" type="button" role="menuitem"></button>
+            <button id="btn-menu" class="gear-item" type="button" role="menuitem"></button>
+          </div>
+        </div>
       </div>
     </header>
     <main id="page" class="page">
@@ -108,8 +114,9 @@
   <script src="js/mixer.js"></script>
   <script src="js/pomodoro.js"></script>
   <script src="js/obs.js"></script>
+  <script src="js/spotify.js"></script>
   <script src="js/grid.js"></script>
-  <!-- El editor (js/editor-forms.js, js/editor.js, css/editor.css) se carga al tocar el lapiz -->
+  <!-- El editor (js/editor-forms.js, js/editor.js, css/editor.css) se carga al tocar Editar -->
   <script src="js/app.js"></script>
 </body>
 </html>

@@ -8,6 +8,7 @@ from phonedeck.api import (
     routes_media,
     routes_obs,
     routes_pairing,
+    routes_spotify,
 )
 
 ROUTERS = (
@@ -18,6 +19,7 @@ ROUTERS = (
     routes_pairing.router,
     routes_apps.router,
     routes_obs.router,
+    routes_spotify.router,
 )
 
 __all__ = ["ROUTERS"]

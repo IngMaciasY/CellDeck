@@ -45,6 +45,20 @@ con el editor, y al quitar uno el celular pierde ese control.
 
 PhoneDeck se conecta a OBS desde la PC, así que OBS no necesita abrirse a la red.
 
+## Spotify
+
+La página **Spotify** muestra tus playlists y sus canciones, y controla la música que suena en
+la PC. Requiere Spotify Premium y crear una app gratuita en el panel de Spotify. Sigue los pasos
+de [docs/spotify.md](docs/spotify.md).
+
+Spotify es una marca de Spotify AB. Este proyecto no está afiliado a Spotify, y su logo no forma
+parte de la licencia MIT.
+
+## El engranaje
+
+**Editar**, **Pantalla completa** y **Ajustes** están en el botón de engranaje. Solo aparece lo
+que se puede usar en ese dispositivo. Si solo queda Ajustes, el engranaje lo abre directamente.
+
 ## Usar PhoneDeck.exe
 
 1. Ejecuta `PhoneDeck.exe`: aparece un icono junto al reloj de Windows.

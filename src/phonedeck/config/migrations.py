@@ -4,8 +4,9 @@
 anterior no vería las secciones nuevas. Además, por WiFi el editor está desactivado por
 defecto: sin esta migración muchos usuarios no podrían añadirlas desde el celular.
 
-Se aplica una sola vez (queda anotado en ``settings.json``): si el usuario borra después una
-de estas páginas, no vuelve a aparecer.
+Cada sección se añade una sola vez (la versión queda anotada en ``settings.json``): si el
+usuario borra después una de estas páginas, no vuelve a aparecer. Por eso cada sección lleva su
+versión: una migración nueva solo mira las secciones de esa versión.
 """
 
 from __future__ import annotations
@@ -19,8 +20,14 @@ from phonedeck.config.store import ConfigError, ConfigStore, default_config_data
 
 log = logging.getLogger(__name__)
 
-SECTIONS_VERSION = 1
-NEW_SECTIONS = {"mixer": "mixer", "pomodoro": "pomodoro", "obs": "obs"}  # página → widget
+# página → (versión en la que apareció, widget)
+SECTIONS = {
+    "mixer": (1, "mixer"),
+    "pomodoro": (1, "pomodoro"),
+    "obs": (1, "obs"),
+    "spotify": (2, "spotify"),
+}
+SECTIONS_VERSION = max(version for version, _ in SECTIONS.values())
 
 
 def _unique_id(page_id: str, taken: set[str]) -> str:
@@ -34,16 +41,18 @@ def _unique_id(page_id: str, taken: set[str]) -> str:
 
 def add_new_sections(store: ConfigStore, settings_store: SettingsStore) -> None:
     """Añade las páginas de las secciones nuevas que la configuración aún no tenga."""
-    if settings_store.settings.sections_version >= SECTIONS_VERSION:
+    applied = settings_store.settings.sections_version
+    if applied >= SECTIONS_VERSION:
         return
     if store.last_error is not None:
         return  # config.json inválido: no se toca, ya se avisa al usuario
 
     config = store.config
+    new_sections = {page: w for page, (version, w) in SECTIONS.items() if version > applied}
     pages: list[dict[str, Any]] = [
         page
         for page in default_config_data()["pages"]
-        if page["id"] in NEW_SECTIONS and not config.has_widget(NEW_SECTIONS[page["id"]])
+        if page["id"] in new_sections and not config.has_widget(new_sections[page["id"]])
     ]
     room = MAX_PAGES - len(config.pages)
     if not config.has_widget("volume"):

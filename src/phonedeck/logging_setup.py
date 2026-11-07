@@ -10,8 +10,12 @@ from pathlib import Path
 
 FORMAT = "%(asctime)s %(levelname)-7s %(name)s: %(message)s"
 
-# Tokens en URLs (/ws?token=..., /api/media/artwork?token=...) o en cabeceras.
-_TOKEN_RE = re.compile(r"(token=|x-phonedeck-token[\"']?:\s*[\"']?)[A-Za-z0-9_\-.]+", re.IGNORECASE)
+# Tokens en URLs (/ws?token=..., /api/media/artwork?token=...) o en cabeceras, y el código de
+# autorización con el que Spotify vuelve a /api/spotify/callback?code=...&state=...
+_TOKEN_RE = re.compile(
+    r"(token=|[?&]code=|[?&]state=|x-phonedeck-token[\"']?:\s*[\"']?)[A-Za-z0-9_\-.]+",
+    re.IGNORECASE,
+)
 
 
 class RedactTokensFilter(logging.Filter):

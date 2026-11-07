@@ -53,6 +53,9 @@ class Settings(BaseModel):
     obs_host: str = "127.0.0.1"
     obs_port: int = Field(default=4455, ge=1, le=65535)
     obs_password: str = ""
+    # Cuenta de Spotify (ver phonedeck.spotify). El Client ID no es secreto; el token sí.
+    spotify_client_id: str = ""
+    spotify_refresh_token: str = ""
     # Hasta qué versión se aplicó la migración de secciones (ver config.migrations).
     sections_version: int = 0
 

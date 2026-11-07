@@ -1,6 +1,6 @@
 /*
  * PhoneDeck - widgets: reloj, CPU/RAM, ahora suena y volumen.
- * Mezclador, Pomodoro y OBS viven en su propio archivo y se añaden con register().
+ * Mezclador, Pomodoro, OBS y Spotify viven en su propio archivo y se añaden con register().
  *
  * Cada widget: { el, update(type, data), destroy() }.
  * Los datos en vivo llegan por WebSocket (mensajes "media", "volume", "stats").

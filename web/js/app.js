@@ -94,7 +94,7 @@
 
   // ------------------------------------------------- suscripción a datos en vivo
   const WIDGET_TOPICS = { now_playing: 'media', volume: 'volume', stats: 'stats', mixer: 'mixer',
-    pomodoro: 'pomodoro', obs: 'obs' };
+    pomodoro: 'pomodoro', obs: 'obs', spotify: 'spotify' };
 
   /** Temas en vivo que necesita la página visible (según sus widgets). */
   function topicsForPage(page) {
@@ -130,6 +130,7 @@
     if (pageId === state.pageId) return;
     state.pageId = pageId;
     u.store.set('page', pageId);
+    setGearOpen(false);
     renderTabs();
     renderPage();
     $('page').scrollTop = 0;
@@ -267,7 +268,7 @@
   }
 
   // ------------------------------------------------------------ WebSocket
-  const LIVE_TYPES = ['media', 'volume', 'stats', 'mixer', 'pomodoro', 'obs'];
+  const LIVE_TYPES = ['media', 'volume', 'stats', 'mixer', 'pomodoro', 'obs', 'spotify'];
 
   function onLiveMessage(type, data) {
     if (type === 'config') {
@@ -414,6 +415,21 @@
     }
   }
 
+  /** Al volver del login de Spotify, la PC deja el resultado en la URL (#spotify=ok). */
+  function showSpotifyResult() {
+    const m = /[#&]spotify=(ok|denied|error)/.exec(global.location.hash);
+    if (!m) return;
+    if (global.history && global.history.replaceState) {
+      global.history.replaceState(null, '', global.location.pathname + global.location.search);
+    }
+    const messages = {
+      ok: 'Cuenta de Spotify vinculada',
+      denied: 'No autorizaste el acceso a Spotify',
+      error: 'No se pudo vincular la cuenta de Spotify'
+    };
+    u.toast(messages[m[1]], m[1] === 'ok' ? 'ok' : 'error');
+  }
+
   // --------------------------------------------- pantalla completa / sueño
   function fullscreenElement() {
     // Chrome 60 solo tiene la versión con prefijo; la estándar se usa si existe.
@@ -452,9 +468,10 @@
 
   function updateFullscreenIcon() {
     const btn = $('btn-fullscreen');
-    u.show(btn, fullscreenSupported() || !!fullscreenElement());
-    btn.innerHTML = '';
-    btn.appendChild(PD.icons.icon(fullscreenElement() ? 'minimize' : 'maximize'));
+    const active = !!fullscreenElement();
+    u.show(btn, fullscreenSupported() || active);
+    fillGearItem(btn, active ? 'minimize' : 'maximize',
+      active ? 'Salir de pantalla completa' : 'Pantalla completa');
   }
 
   let gestureHandled = false;
@@ -477,6 +494,63 @@
   function hasWidget(name) {
     return !!state.config && state.config.pages.some(function (page) {
       return page.items.some(function (item) { return item.widget === name; });
+    });
+  }
+
+  // ------------------------------------------------------------- engranaje
+  function fillGearItem(btn, iconName, label) {
+    btn.innerHTML = '';
+    btn.appendChild(PD.icons.icon(iconName));
+    btn.appendChild(u.el('span', '', label));
+  }
+
+  function gearIsOpen() {
+    return $('gear-menu').classList.contains('open');
+  }
+
+  function setGearOpen(open) {
+    $('gear-menu').classList.toggle('open', open);
+    $('btn-gear').setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+
+  /** Editar y Pantalla completa se ocultan según el dispositivo; Ajustes siempre está. */
+  function gearOptions() {
+    return ['btn-edit', 'btn-fullscreen', 'btn-menu'].map($).filter(function (btn) {
+      return !btn.classList.contains('hidden');
+    });
+  }
+
+  function onGearClick() {
+    onUserGesture();
+    const options = gearOptions();
+    if (options.length === 1) {
+      options[0].click();   // un menú de una sola opción solo añadiría un toque
+      return;
+    }
+    setGearOpen(!gearIsOpen());
+  }
+
+  /**
+   * Tocar fuera solo cierra: el toque no llega a lo que hay debajo. Aquí debajo hay botones
+   * que actúan sobre la PC (apagar, cerrar sesión) y cerrar un menú no debe pulsarlos.
+   */
+  function onClickOutsideGear(e) {
+    if (!gearIsOpen() || e.target.closest('.gear')) return;
+    e.stopPropagation();
+    e.preventDefault();
+    setGearOpen(false);
+  }
+
+  function bindGear() {
+    const gear = $('btn-gear');
+    gear.appendChild(PD.icons.icon('settings'));
+    gear.addEventListener('click', onGearClick);
+    $('gear-menu').addEventListener('click', function () { setGearOpen(false); });
+    document.addEventListener('click', onClickOutsideGear, true);
+    document.addEventListener('keydown', function (e) {
+      if (e.key !== 'Escape' || !gearIsOpen()) return;
+      setGearOpen(false);
+      gear.focus();
     });
   }
 
@@ -535,7 +609,7 @@
   }
 
   function bindMenu() {
-    $('btn-menu').appendChild(PD.icons.icon('menu'));
+    fillGearItem($('btn-menu'), 'sliders', 'Ajustes');
     $('btn-menu').addEventListener('click', function () { onUserGesture(); openSheet(); });
     $('sheet-backdrop').addEventListener('click', closeSheet);
     $('opt-haptics').addEventListener('change', function (e) { u.store.set('haptics', e.target.checked); });
@@ -672,7 +746,7 @@
   let editorLoading = null;
 
   /**
-   * El editor (~40 KB de JS + CSS) solo se descarga la primera vez que se toca el lápiz:
+   * El editor (~40 KB de JS + CSS) solo se descarga la primera vez que se toca Editar:
    * la mayoría de las veces el panel se usa sin editar.
    */
   function ensureEditor() {
@@ -709,8 +783,9 @@
 
   function init() {
     api.onUnauthorized(handleUnauthorized);
-    $('btn-edit').appendChild(PD.icons.icon('pencil'));
+    fillGearItem($('btn-edit'), 'pencil', 'Editar');
     $('btn-edit').addEventListener('click', onEditClick);
+    bindGear();
     bindMenu();
     bindSwipe();
     updateFullscreenIcon();
@@ -725,6 +800,7 @@
     });
 
     const relayout = u.throttle(function () {
+      setGearOpen(false);   // su posición depende de la orientación
       if (!state.config) return;
       const cols = PD.grid.columnsFor(state.config.appearance);
       if (cols !== state.lastCols) {
@@ -742,6 +818,7 @@
     });
 
     registerServiceWorker();
+    showSpotifyResult();
     pairFromHash().then(start, start);
   }
 

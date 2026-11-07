@@ -96,6 +96,14 @@
       "items": [
         { "kind": "widget", "id": "obs", "widget": "obs", "w": 6, "h": 4 }
       ]
+    },
+    {
+      "id": "spotify",
+      "name": "Spotify",
+      "icon": "spotify",
+      "items": [
+        { "kind": "widget", "id": "spotify", "widget": "spotify", "w": 6, "h": 4 }
+      ]
     }
   ]
 }

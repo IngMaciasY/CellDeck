@@ -1,6 +1,10 @@
 Iconos de PhoneDeck
 ===================
 
+- spotify-logo-*.svg y el icono "spotify" de web/js/icons.js: logotipos oficiales de Spotify AB,
+  descargados de developer.spotify.com/documentation/design. Son marcas de Spotify, NO están
+  bajo la licencia MIT de este proyecto y se usan solo para identificar la integración.
+
 - app-*.png / favicon: generados por scripts/make_icon.py (MIT, como el resto del proyecto).
 - Iconos de interfaz (web/js/icons.js): trazados a mano siguiendo el estilo de Lucide
   (https://lucide.dev). Algunas formas coinciden con las de Lucide, cuya licencia es:

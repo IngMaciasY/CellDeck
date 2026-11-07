@@ -31,13 +31,13 @@ def ids(state: AppState) -> list[str]:
 
 def test_new_install_gets_sections_once(tmp_path: Path) -> None:
     state = boot(tmp_path)
-    assert ids(state) == ["media", "pc", "mixer", "pomodoro", "obs"]
+    assert ids(state) == ["media", "pc", "mixer", "pomodoro", "obs", "spotify"]
     assert state.settings.sections_version == SECTIONS_VERSION
 
 
 def test_existing_install_keeps_its_pages_and_gets_the_sections(tmp_path: Path) -> None:
     state = boot(tmp_path, old_config())
-    assert ids(state) == ["mio", "mixer", "pomodoro", "obs"]
+    assert ids(state) == ["mio", "mixer", "pomodoro", "obs", "spotify"]
     assert state.config_store.config.has_widget("obs")
     saved = json.loads((tmp_path / "config.json").read_text(encoding="utf-8"))
     assert [p["id"] for p in saved["pages"]] == ids(state)
@@ -50,17 +50,40 @@ def test_removed_sections_do_not_come_back(tmp_path: Path) -> None:
     config.pages = [p for p in config.pages if p.id != "obs"]
     state.config_store.save(config)
 
-    assert ids(boot(tmp_path)) == ["mio", "mixer", "pomodoro"]
+    assert ids(boot(tmp_path)) == ["mio", "mixer", "pomodoro", "spotify"]
+
+
+def boot_from_version_1(tmp_path: Path, config: dict[str, Any]) -> AppState:
+    """Instalación que ya aplicó la migración de Mixer, Pomodoro y OBS."""
+    settings = {"sections_version": 1}
+    (tmp_path / "settings.json").write_text(json.dumps(settings), encoding="utf-8")
+    return boot(tmp_path, config)
+
+
+def test_update_adds_only_the_new_section(tmp_path: Path) -> None:
+    """Quien borró OBS antes de esta versión no debe verlo volver al actualizar."""
+    state = boot_from_version_1(tmp_path, old_config())
+    assert ids(state) == ["mio", "spotify"]
+    assert state.settings.sections_version == SECTIONS_VERSION
+
+
+def test_removed_spotify_does_not_come_back(tmp_path: Path) -> None:
+    state = boot_from_version_1(tmp_path, old_config())
+    config = state.config_store.config
+    config.pages = [p for p in config.pages if p.id != "spotify"]
+    state.config_store.save(config)
+    assert ids(boot(tmp_path)) == ["mio"]
 
 
 def test_section_already_on_another_page_is_not_duplicated(tmp_path: Path) -> None:
     widget = {"kind": "widget", "id": "m", "widget": "mixer", "w": 3, "h": 2}
-    assert ids(boot(tmp_path, old_config(items=[widget]))) == ["mio", "pomodoro", "obs"]
+    expected = ["mio", "pomodoro", "obs", "spotify"]
+    assert ids(boot(tmp_path, old_config(items=[widget]))) == expected
 
 
 def test_page_id_conflict_gets_a_new_id(tmp_path: Path) -> None:
     state = boot(tmp_path, old_config(id="obs", name="Otra cosa"))
-    assert ids(state) == ["obs", "mixer", "pomodoro", "obs-2"]
+    assert ids(state) == ["obs", "mixer", "pomodoro", "obs-2", "spotify"]
     assert state.config_store.config.pages[0].name == "Otra cosa"
 
 
@@ -90,7 +113,7 @@ def test_write_failure_does_not_stop_the_app(
     assert state.settings.sections_version == 0  # se reintentará
 
     monkeypatch.undo()
-    assert ids(boot(tmp_path)) == ["mio", "mixer", "pomodoro", "obs"]
+    assert ids(boot(tmp_path)) == ["mio", "mixer", "pomodoro", "obs", "spotify"]
 
 
 def test_invalid_config_is_left_alone(tmp_path: Path) -> None:

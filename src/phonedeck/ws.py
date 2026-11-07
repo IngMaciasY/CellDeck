@@ -21,7 +21,7 @@ log = logging.getLogger(__name__)
 
 SEND_TIMEOUT_S = 5.0
 # Temas filtrables; el resto de mensajes (config, hello, error) llega siempre a todos.
-LIVE_TOPICS = frozenset({"media", "volume", "stats", "mixer", "pomodoro", "obs"})
+LIVE_TOPICS = frozenset({"media", "volume", "stats", "mixer", "pomodoro", "obs", "spotify"})
 # Temas de un cliente que aún no eligió. Los demás se piden siempre: si no, abrir la página en
 # cualquier sección contaría unos instantes como mirar OBS, y el puente se conectaría a OBS.
 INITIAL_TOPICS = frozenset({"media", "volume", "stats"})
@@ -41,6 +41,8 @@ class WebSocketHub:
         self._snapshot: dict[str, Any] = {}
         # Temas cuyo valor caduca (el tiempo restante del Pomodoro): se calculan al suscribirse.
         self._providers: dict[str, Callable[[], Any]] = {}
+        # Temas que solo existen mientras se cumple una condición (que haya cierto widget).
+        self._gates: dict[str, Callable[[], bool]] = {}
         self._wakeup = asyncio.Event()
 
     @property
@@ -49,6 +51,8 @@ class WebSocketHub:
 
     def subscribers(self, topic: str) -> int:
         """Cuántos clientes quieren recibir ``topic``."""
+        if not self._allowed(topic):
+            return 0
         return sum(1 for topics in self._clients.values() if topic in topics)
 
     def snapshot(self) -> dict[str, Any]:
@@ -64,6 +68,17 @@ class WebSocketHub:
     def wake(self) -> None:
         """Despierta ya a los servicios (cambió una suscripción o hay un dato nuevo)."""
         self._wakeup.set()
+
+    def set_gate(self, topic: str, allowed: Callable[[], bool]) -> None:
+        """Hace que ``topic`` solo se envíe y solo cuente mientras ``allowed`` sea cierto.
+
+        Se comprueba en cada envío: así también deja fuera a quien ya estaba suscrito.
+        """
+        self._gates[topic] = allowed
+
+    def _allowed(self, topic: str) -> bool:
+        gate = self._gates.get(topic)
+        return gate is None or gate()
 
     def set_provider(self, topic: str, provider: Callable[[], Any]) -> None:
         """Hace que ``topic`` se calcule en cada suscripción en vez de guardar una copia."""
@@ -87,7 +102,7 @@ class WebSocketHub:
         """Cambia los temas del cliente y le envía el último valor de los nuevos."""
         if ws not in self._clients:
             return
-        wanted = frozenset(topics & LIVE_TOPICS)
+        wanted = frozenset(t for t in topics & LIVE_TOPICS if self._allowed(t))
         added = wanted - self._clients[ws]
         self._clients[ws] = wanted
         for topic in sorted(added):
@@ -100,6 +115,8 @@ class WebSocketHub:
 
     async def broadcast(self, msg_type: str, data: Any, cache: bool = True) -> None:
         """Envía ``{"type": msg_type, "data": data}`` a los clientes interesados."""
+        if not self._allowed(msg_type):
+            return
         if cache:
             self._snapshot[msg_type] = data
         filtered = msg_type in LIVE_TOPICS

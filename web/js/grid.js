@@ -146,7 +146,7 @@
     const edit = handlers.edit || null;
 
     if ((!page || !page.items || !page.items.length) && !edit) {
-      gridEl.appendChild(u.el('div', 'empty', 'Esta página está vacía. Toca el lápiz ✎ para añadir botones.'));
+      gridEl.appendChild(u.el('div', 'empty', 'Esta página está vacía. Toca el engranaje y luego Editar para añadir botones.'));
       return;
     }
 

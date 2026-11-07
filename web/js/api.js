@@ -78,6 +78,22 @@
     plugins: function () { return request('GET', '/api/plugins'); },
     apps: function () { return request('GET', '/api/apps'); },
     obsSettings: function () { return request('GET', '/api/obs/settings'); },
-    saveObsSettings: function (body) { return request('PUT', '/api/obs/settings', body); }
+    saveObsSettings: function (body) { return request('PUT', '/api/obs/settings', body); },
+    spotifySettings: function () { return request('GET', '/api/spotify/settings'); },
+    saveSpotifySettings: function (body) { return request('PUT', '/api/spotify/settings', body); },
+    spotifyLogin: function () { return request('POST', '/api/spotify/login'); },
+    spotifyUnlink: function () { return request('POST', '/api/spotify/unlink'); },
+    spotifyPlaylists: function (offset) {
+      return request('GET', '/api/spotify/playlists?offset=' + offset);
+    },
+    spotifyTracks: function (id, offset) {
+      return request('GET', '/api/spotify/playlists/' + encodeURIComponent(id) +
+        '/tracks?offset=' + offset);
+    },
+    /** Las <img> no pueden enviar cabeceras: el token va en la URL, como en la portada. */
+    spotifyImage: function (key) {
+      return '/api/spotify/image/' + encodeURIComponent(key) +
+        '?token=' + encodeURIComponent(token || '');
+    }
   };
 })(window);

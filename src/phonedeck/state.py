@@ -22,6 +22,7 @@ from phonedeck.plugins.loader import load_external_plugins
 from phonedeck.plugins.runner import ActionRunner
 from phonedeck.pomodoro import PomodoroTimer
 from phonedeck.security import PinGuard, TokenManager
+from phonedeck.spotify import SpotifyBridge
 from phonedeck.ws import WebSocketHub
 
 log = logging.getLogger(__name__)
@@ -61,6 +62,7 @@ class AppState:
     allowed_hosts: AllowedHosts
     pomodoro: PomodoroTimer
     obs: ObsBridge
+    spotify: SpotifyBridge
     mode: str
     version: str = __version__
     started_at: float = field(default_factory=time.time)
@@ -111,6 +113,10 @@ def build_state(
     hub = WebSocketHub()
     pomodoro = PomodoroTimer(data_dir / "pomodoro.json")
     hub.set_provider("pomodoro", pomodoro.payload)
+    spotify = SpotifyBridge(hub, settings_store)
+    hub.set_provider("spotify", spotify.payload)
+    # Quitar el widget retira el acceso: también a los datos en vivo de la cuenta.
+    hub.set_gate("spotify", lambda: config_store.config.has_widget("spotify"))
     return AppState(
         data_dir=data_dir,
         settings_store=settings_store,
@@ -124,5 +130,6 @@ def build_state(
         allowed_hosts=AllowedHosts(mode == "wifi", settings.extra_allowed_hosts),
         pomodoro=pomodoro,
         obs=ObsBridge(hub, lambda: settings_store.settings),
+        spotify=spotify,
         mode=mode,
     )

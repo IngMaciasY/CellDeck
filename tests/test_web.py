@@ -92,6 +92,23 @@ def test_default_config_icons_exist_in_frontend() -> None:
     assert used <= available, f"Iconos sin dibujo: {sorted(used - available)}"
 
 
+def test_spotify_logos_are_the_monochrome_official_ones() -> None:
+    """Spotify solo admite su logo verde sobre negro o blanco puros, y sin alterarlo."""
+    white = (WEB / "icons" / "spotify-logo-white.svg").read_text(encoding="utf-8")
+    black = (WEB / "icons" / "spotify-logo-black.svg").read_text(encoding="utf-8")
+    assert "fill:#fff" in white
+    assert "#1ed760" not in (white + black).lower()
+    assert "<script" not in white + black
+
+
+def test_settings_actions_live_inside_the_gear_menu() -> None:
+    html = (WEB / "index.html").read_text(encoding="utf-8")
+    menu = html[html.index('id="gear-menu"') : html.index("</header>")]
+    for button in ("btn-edit", "btn-fullscreen", "btn-menu"):
+        assert f'id="{button}"' in menu
+    assert html.count('id="btn-menu"') == 1
+
+
 def test_labels_are_not_hidden_globally() -> None:
     """Regresión: solo `.no-labels` puede ocultar las etiquetas de los botones."""
     css = (WEB / "css" / "app.css").read_text(encoding="utf-8")

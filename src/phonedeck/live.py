@@ -10,6 +10,9 @@ Son pocos comandos, con parámetros acotados:
 - ``pomodoro.control`` ``{"action": "start" | "pause" | "resume" | "reset"}``
 - ``pomodoro.config``  ``{"work": min, "short_break": min, "long_break": min}``
 - ``obs.scene``   ``{"name": escena}``    (solo escenas de la lista actual de OBS)
+- ``spotify.control`` ``{"action": "play" | "pause" | "next" | "previous"}``
+- ``spotify.play``    ``{"context": URI de playlist, "track": URI de canción o null}``
+- ``spotify.open``    ``{"uri": URI de playlist}`` (la abre en la PC)
 
 Y solo se aceptan si el widget correspondiente está en la configuración: si el usuario
 quita el widget, el celular deja de poder usar ese control.
@@ -17,17 +20,19 @@ quita el widget, el celular deja de poder usar ese control.
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 from typing import Any, Literal
 
-from fastapi import WebSocket
+from fastapi import WebSocket, WebSocketDisconnect
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from phonedeck.platform.base import MediaKey, PlatformError
 from phonedeck.pomodoro import MAX_MINUTES, Durations
 from phonedeck.services.pomodoro import publish as publish_pomodoro
 from phonedeck.services.volume import volume_payload
+from phonedeck.spotify import ITEM_URI_PATTERN, PLAYLIST_URI_PATTERN, MediaAction
 from phonedeck.state import AppState
 
 log = logging.getLogger(__name__)
@@ -76,6 +81,19 @@ class ObsScene(_Msg):
     name: str = Field(min_length=1, max_length=256)
 
 
+class SpotifyControl(_Msg):
+    action: MediaAction
+
+
+class SpotifyPlay(_Msg):
+    context: str = Field(pattern=PLAYLIST_URI_PATTERN)
+    track: str | None = Field(default=None, pattern=ITEM_URI_PATTERN)
+
+
+class SpotifyOpen(_Msg):
+    uri: str = Field(pattern=PLAYLIST_URI_PATTERN)
+
+
 # tipo de mensaje → (modelo, widget requerido en la config)
 COMMANDS: dict[str, tuple[type[_Msg], str]] = {
     "volume.set": (VolumeSet, "volume"),
@@ -86,11 +104,41 @@ COMMANDS: dict[str, tuple[type[_Msg], str]] = {
     "pomodoro.control": (PomodoroControl, "pomodoro"),
     "pomodoro.config": (PomodoroConfig, "pomodoro"),
     "obs.scene": (ObsScene, "obs"),
+    "spotify.control": (SpotifyControl, "spotify"),
+    "spotify.play": (SpotifyPlay, "spotify"),
+    "spotify.open": (SpotifyOpen, "spotify"),
 }
+
+
+# Referencias a las órdenes en curso: asyncio solo guarda una referencia débil a cada tarea.
+_spotify_tasks: set[asyncio.Task[None]] = set()
 
 
 async def _send(ws: WebSocket, msg_type: str, data: Any = None) -> None:
     await ws.send_text(json.dumps({"type": msg_type, "data": data}, ensure_ascii=False))
+
+
+async def _run_spotify(state: AppState, ws: WebSocket, cmd: _Msg) -> None:
+    """Ejecuta una orden para Spotify. Puede tardar segundos y va por Internet."""
+    try:
+        if isinstance(cmd, SpotifyControl):
+            await state.spotify.control(cmd.action)
+        elif isinstance(cmd, SpotifyPlay):
+            await state.spotify.play(cmd.context, cmd.track)
+        elif isinstance(cmd, SpotifyOpen):
+            await state.spotify.open_playlist(state.backend, cmd.uri)
+    except PlatformError as exc:
+        await _report(ws, str(exc))
+    except Exception:
+        log.exception("Error ejecutando una orden de Spotify")
+        await _report(ws, "Error interno (ver log)")
+
+
+async def _report(ws: WebSocket, message: str) -> None:
+    try:
+        await _send(ws, "error", {"message": message})
+    except (RuntimeError, WebSocketDisconnect):
+        log.debug("El celular se desconectó antes de recibir el error")
 
 
 async def handle_client_message(state: AppState, ws: WebSocket, raw: str) -> None:
@@ -123,6 +171,13 @@ async def handle_client_message(state: AppState, ws: WebSocket, raw: str) -> Non
         cmd = model.model_validate(msg)
     except ValidationError:
         await _send(ws, "error", {"message": "Comando inválido"})
+        return
+
+    if isinstance(cmd, SpotifyControl | SpotifyPlay | SpotifyOpen):
+        # Aparte: si Spotify tarda, el volumen y demás controles de este celular no esperan.
+        task = asyncio.create_task(_run_spotify(state, ws, cmd))
+        _spotify_tasks.add(task)
+        task.add_done_callback(_spotify_tasks.discard)
         return
 
     backend = state.backend
