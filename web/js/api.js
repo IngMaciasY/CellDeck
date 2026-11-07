@@ -86,6 +86,17 @@
     spotifyPlaylists: function (offset) {
       return request('GET', '/api/spotify/playlists?offset=' + offset);
     },
+    spotifyRecent: function () { return request('GET', '/api/spotify/recent'); },
+    spotifyQueue: function () { return request('GET', '/api/spotify/queue'); },
+    spotifyLiked: function (offset) { return request('GET', '/api/spotify/liked?offset=' + offset); },
+    spotifyAlbums: function (offset) { return request('GET', '/api/spotify/albums?offset=' + offset); },
+    spotifyAlbumTracks: function (id, offset) {
+      return request('GET', '/api/spotify/albums/' + encodeURIComponent(id) +
+        '/tracks?offset=' + offset);
+    },
+    spotifySearch: function (text) {
+      return request('GET', '/api/spotify/search?q=' + encodeURIComponent(text));
+    },
     spotifyTracks: function (id, offset) {
       return request('GET', '/api/spotify/playlists/' + encodeURIComponent(id) +
         '/tracks?offset=' + offset);

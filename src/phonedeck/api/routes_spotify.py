@@ -19,6 +19,7 @@ from phonedeck.security import TOKEN_HEADER, is_loopback
 from phonedeck.spotify import (
     CLIENT_ID_PATTERN,
     IMAGE_KEY_PATTERN,
+    MAX_QUERY,
     PLAYLIST_ID_PATTERN,
     SpotifyError,
     SpotifyStatus,
@@ -30,6 +31,7 @@ log = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/spotify", tags=["spotify"])
 
 Offset = Annotated[int, Query(ge=0, le=100_000)]
+SpotifyId = Annotated[str, Path(pattern=PLAYLIST_ID_PATTERN)]
 
 
 def require_local(principal: PrincipalDep) -> Principal:
@@ -131,13 +133,70 @@ async def playlists(state: StateDep, _: ViewerDep, offset: Offset = 0) -> dict[s
 
 @router.get("/playlists/{playlist_id}/tracks")
 async def playlist_tracks(
-    playlist_id: Annotated[str, Path(pattern=PLAYLIST_ID_PATTERN)],
+    playlist_id: SpotifyId,
     state: StateDep,
     _: ViewerDep,
     offset: Offset = 0,
 ) -> dict[str, Any]:
     try:
         return await state.spotify.playlist_tracks(playlist_id, offset)
+    except SpotifyError as exc:
+        raise _unavailable(exc) from exc
+
+
+@router.get("/recent")
+async def recent(state: StateDep, _: ViewerDep) -> dict[str, Any]:
+    try:
+        return await state.spotify.recent()
+    except SpotifyError as exc:
+        raise _unavailable(exc) from exc
+
+
+@router.get("/liked")
+async def liked(state: StateDep, _: ViewerDep, offset: Offset = 0) -> dict[str, Any]:
+    try:
+        return await state.spotify.liked(offset)
+    except SpotifyError as exc:
+        raise _unavailable(exc) from exc
+
+
+@router.get("/albums")
+async def albums(state: StateDep, _: ViewerDep, offset: Offset = 0) -> dict[str, Any]:
+    try:
+        return await state.spotify.albums(offset)
+    except SpotifyError as exc:
+        raise _unavailable(exc) from exc
+
+
+@router.get("/albums/{album_id}/tracks")
+async def album_tracks(
+    album_id: SpotifyId, state: StateDep, _: ViewerDep, offset: Offset = 0
+) -> dict[str, Any]:
+    try:
+        return await state.spotify.album_tracks(album_id, offset)
+    except SpotifyError as exc:
+        raise _unavailable(exc) from exc
+
+
+@router.get("/search")
+async def search(
+    state: StateDep,
+    _: ViewerDep,
+    q: Annotated[str, Query(min_length=1, max_length=MAX_QUERY)],
+) -> dict[str, Any]:
+    text = q.strip()
+    if not text:
+        raise HTTPException(422, "Escribe qué buscar")
+    try:
+        return await state.spotify.search(text)
+    except SpotifyError as exc:
+        raise _unavailable(exc) from exc
+
+
+@router.get("/queue")
+async def queue(state: StateDep, _: ViewerDep) -> dict[str, Any]:
+    try:
+        return await state.spotify.queue()
     except SpotifyError as exc:
         raise _unavailable(exc) from exc
 

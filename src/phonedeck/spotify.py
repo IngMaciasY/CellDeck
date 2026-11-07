@@ -8,7 +8,9 @@ la cuenta se vincula desde la PC o con el celular por USB; después sirve desde 
 Autenticación: OAuth 2.0 con PKCE, sin ``client_secret``. PhoneDeck es código abierto y cada
 usuario crea su propio Client ID (el modo de desarrollo de Spotify admite 5 usuarios por app).
 
-Alcance: leer playlists y ordenar reproducir, pausar y saltar. No se reenvían peticiones libres.
+Alcance: leer playlists, recientes, canciones y álbumes guardados, buscar, ver la cola, y ordenar
+reproducir, pausar, saltar, avanzar dentro de la canción y añadir a la cola. No se reenvían
+peticiones libres.
 El estado del reproductor solo se consulta mientras alguien mira la sección.
 """
 
@@ -49,16 +51,23 @@ SCOPES = (
     "playlist-read-collaborative",
     "user-read-playback-state",
     "user-modify-playback-state",
+    "user-read-recently-played",
+    "user-library-read",
 )
 
 CLIENT_ID_PATTERN = r"^[0-9a-fA-F]{32}$"
 PLAYLIST_ID_PATTERN = r"^[A-Za-z0-9]{1,62}$"
-PLAYLIST_URI_PATTERN = r"^spotify:playlist:[A-Za-z0-9]{1,62}$"
+CONTEXT_URI_PATTERN = r"^spotify:(playlist|album):[A-Za-z0-9]{1,62}$"
 ITEM_URI_PATTERN = r"^spotify:(track|episode):[A-Za-z0-9]{1,62}$"
 IMAGE_KEY_PATTERN = r"^[0-9a-f]{32}$"
 
 PAGE_SIZE = 50  # máximo que admite Spotify
 PLAYLIST_IMAGE_WIDTH = 160
+SEARCH_LIMIT = 10  # máximo de Spotify desde febrero de 2026
+MAX_QUERY = 100
+MAX_PLAY_URIS = 50  # cabe con holgura en un mensaje del WebSocket
+QUEUE_LIMIT = 20
+MAX_POSITION_MS = 24 * 3600 * 1000
 TRACK_IMAGE_WIDTH = 64
 MAX_DESCRIPTION = 300
 
@@ -97,6 +106,7 @@ PREMIUM_MESSAGE = "Spotify solo permite controlar la reproducción con una cuent
 COMMAND_REFUSED_MESSAGE = "Spotify no permitió esa acción ahora mismo"
 SCHEME_BLOCKED_MESSAGE = "Los ajustes de la PC no permiten abrir enlaces de Spotify"
 BUSY_MESSAGE = "Spotify va lento: espera un momento"
+RELINK_MESSAGE = "Para ver esta sección, vuelve a vincular la cuenta desde la PC"
 
 MediaAction = Literal["play", "pause", "next", "previous"]
 PLAYER_COMMANDS: dict[str, tuple[str, str]] = {
@@ -321,6 +331,10 @@ class SpotifyBridge:
         self._user_id: str | None = None
         self._user: str | None = None
         self._player: dict[str, Any] | None = None
+        self._player_at = 0.0  # cuándo se leyó la posición de la canción
+        # Permisos que concedió el usuario: una cuenta vinculada antes de una versión que pide
+        # más permisos debe volver a vincularse para usar las secciones nuevas.
+        self._granted: frozenset[str] | None = None
         self._logins: dict[str, PendingLogin] = {}
         self._retry_at = 0.0
         self._next_poll = 0.0
@@ -350,11 +364,17 @@ class SpotifyBridge:
             SpotifyStatus.UNLINKED,
             SpotifyStatus.EXPIRED,
         )
+        player = None
+        if linked and self._player is not None:
+            # El celular cuenta el tiempo desde aquí: necesita saber cuánto tiene el dato.
+            age = int((time.monotonic() - self._player_at) * 1000)
+            player = self._player | {"progress_age_ms": max(0, age)}
         return {
             "status": status.value,
             "message": self._message if linked else STATUS_MESSAGES[status],
             "user": self._user if linked else None,
-            "player": self._player if linked else None,
+            "player": player,
+            "relink": linked and self._granted is not None and not set(SCOPES) <= self._granted,
         }
 
     async def _publish(self) -> None:
@@ -383,6 +403,7 @@ class SpotifyBridge:
         self._user_id = None
         self._user = None
         self._player = None
+        self._granted = None
         self._retry_at = 0.0
         self._failures = 0
         self._next_poll = 0.0
@@ -513,6 +534,9 @@ class SpotifyBridge:
         lifetime = body.get("expires_in")
         seconds = lifetime if isinstance(lifetime, int) else 3600
         self._access = str(body["access_token"])
+        scope = body.get("scope")
+        if isinstance(scope, str):
+            self._granted = frozenset(scope.split())
         self._expires_at = time.monotonic() + max(0, seconds - EXPIRY_MARGIN_S)
 
     async def _access_token(self, stale: str | None = None) -> str:
@@ -634,9 +658,14 @@ class SpotifyBridge:
             "next_offset": _next_offset(page, offset),
         }
 
-    def _track(self, entry: dict[str, Any]) -> dict[str, Any] | None:
+    def _track(
+        self, entry: dict[str, Any], fallback_album: dict[str, Any] | None = None
+    ) -> dict[str, Any] | None:
+        """Canción para el celular. ``fallback_album`` completa las de un álbum, que no lo traen."""
         # ``item`` es el campo actual; ``track`` es el nombre anterior a febrero de 2026.
         item = _mapping(entry.get("item") or entry.get("track"))
+        if fallback_album is not None and not item.get("album"):
+            item = item | {"album": fallback_album}
         title = item.get("name")
         if not isinstance(title, str) or not title:
             return None
@@ -650,11 +679,14 @@ class SpotifyBridge:
             and item.get("is_local") is not True
             and item.get("is_playable") is not False
         )
+        album_uri = album.get("uri")
+        valid_album = isinstance(album_uri, str) and re.fullmatch(CONTEXT_URI_PATTERN, album_uri)
         return {
             "uri": uri if playable else None,  # los archivos locales no se pueden reproducir
             "title": title,
             "artists": names or str(_mapping(item.get("show")).get("name") or ""),
             "album": str(album.get("name") or ""),
+            "album_uri": album_uri if valid_album else None,
             "image": self._image_key(album.get("images") or item.get("images"), TRACK_IMAGE_WIDTH),
         }
 
@@ -677,6 +709,132 @@ class SpotifyBridge:
             "total": page.get("total"),
             "next_offset": _next_offset(page, offset),
         }
+
+    # ------------------------------------------------------- biblioteca y búsqueda
+    async def _read(
+        self, path: str, scope: str, query: Mapping[str, str | int] | None = None
+    ) -> dict[str, Any]:
+        """Lectura de una sección cuyo permiso pudo no concederse al vincular.
+
+        Un 403 también puede ser una cuenta fuera de la lista de la app: solo se pide volver a
+        vincular si ese permiso falta (o si Spotify no dijo cuáles concedió).
+        """
+        try:
+            return _mapping(await self._api("GET", path, query))
+        except SpotifyApiError as exc:
+            missing = self._granted is None or scope not in self._granted
+            if exc.status == 403 and missing:
+                raise SpotifyError(RELINK_MESSAGE) from exc
+            raise
+
+    def _tracks(
+        self, entries: list[dict[str, Any]], fallback_album: dict[str, Any] | None = None
+    ) -> list[dict[str, Any]]:
+        tracks = [self._track(entry, fallback_album) for entry in entries]
+        return [track for track in tracks if track is not None]
+
+    def _album(self, raw: dict[str, Any]) -> dict[str, Any] | None:
+        album_id = raw.get("id")
+        if not isinstance(album_id, str) or not re.fullmatch(PLAYLIST_ID_PATTERN, album_id):
+            return None
+        artists = [_mapping(a).get("name") for a in raw.get("artists") or []]
+        total = raw.get("total_tracks")
+        return {
+            "id": album_id,
+            "uri": f"spotify:album:{album_id}",
+            "name": str(raw.get("name") or "Sin nombre"),
+            "artists": ", ".join(a for a in artists if isinstance(a, str)),
+            "total": total if isinstance(total, int) else None,
+            "image": self._image_key(raw.get("images"), PLAYLIST_IMAGE_WIDTH),
+        }
+
+    async def recent(self) -> dict[str, Any]:
+        """Lo último que sonó, sin repetir canciones y con la playlist o álbum de donde vino."""
+        page = await self._read(
+            "/me/player/recently-played", "user-read-recently-played", {"limit": PAGE_SIZE}
+        )
+        items: list[dict[str, Any]] = []
+        seen: set[str] = set()
+        for entry in _entries(page):
+            track = self._track(entry)
+            if track is None or (track["uri"] and track["uri"] in seen):
+                continue
+            if track["uri"]:
+                seen.add(track["uri"])
+            context = _mapping(entry.get("context")).get("uri")
+            valid = isinstance(context, str) and re.fullmatch(CONTEXT_URI_PATTERN, context)
+            track["context"] = context if valid else None
+            items.append(track)
+        return {"items": items, "total": None, "next_offset": None}
+
+    async def liked(self, offset: int) -> dict[str, Any]:
+        query = {"limit": PAGE_SIZE, "offset": offset}
+        page = await self._read("/me/tracks", "user-library-read", query)
+        return {
+            "items": self._tracks(_entries(page)),
+            "total": page.get("total"),
+            "next_offset": _next_offset(page, offset),
+        }
+
+    async def albums(self, offset: int) -> dict[str, Any]:
+        query = {"limit": PAGE_SIZE, "offset": offset}
+        page = await self._read("/me/albums", "user-library-read", query)
+        albums = [
+            self._album(_mapping(entry.get("album") or entry.get("item")))
+            for entry in _entries(page)
+        ]
+        return {
+            "items": [album for album in albums if album is not None],
+            "total": page.get("total"),
+            "next_offset": _next_offset(page, offset),
+        }
+
+    async def album_tracks(self, album_id: str, offset: int) -> dict[str, Any]:
+        query = {"limit": PAGE_SIZE, "offset": offset}
+        try:
+            page = _mapping(await self._api("GET", f"/albums/{album_id}/tracks", query))
+        except SpotifyApiError as exc:
+            if exc.status in (403, 404):
+                return {"available": False, "items": [], "total": None, "next_offset": None}
+            raise
+        # Las canciones de un álbum no traen el álbum: se les añade para el contexto.
+        album = {"uri": f"spotify:album:{album_id}"}
+        return {
+            "available": True,
+            "items": self._tracks([{"item": raw} for raw in _entries(page)], album),
+            "total": page.get("total"),
+            "next_offset": _next_offset(page, offset),
+        }
+
+    async def search(self, text: str) -> dict[str, Any]:
+        """Canciones, álbumes y playlists. Spotify da como mucho 10 de cada tipo."""
+        user_id = await self._ensure_user()
+        query: dict[str, str | int] = {
+            "q": text[:MAX_QUERY],
+            "type": "track,album,playlist",
+            "limit": SEARCH_LIMIT,
+        }
+        data = _mapping(await self._api("GET", "/search", query))
+        tracks = self._tracks([{"item": raw} for raw in _entries(_mapping(data.get("tracks")))])
+        albums = [self._album(raw) for raw in _entries(_mapping(data.get("albums")))]
+        playlists = [
+            self._playlist(raw, user_id) for raw in _entries(_mapping(data.get("playlists")))
+        ]
+        return {
+            "tracks": tracks,
+            "albums": [album for album in albums if album is not None],
+            "playlists": [playlist for playlist in playlists if playlist is not None],
+        }
+
+    async def queue(self) -> dict[str, Any]:
+        data = _mapping(await self._api("GET", "/me/player/queue"))
+        upcoming = data.get("queue")
+        entries = (
+            [{"item": raw} for raw in upcoming if isinstance(raw, dict)]
+            if isinstance(upcoming, list)
+            else []
+        )
+        return {"items": self._tracks(entries[:QUEUE_LIMIT]), "total": None, "next_offset": None}
 
     # ---------------------------------------------------------------- portadas
     def _image_key(self, images: Any, min_width: int) -> str | None:
@@ -713,26 +871,41 @@ class SpotifyBridge:
         return res.body, mime
 
     # ---------------------------------------------------------------- órdenes
-    async def _command(self, method: str, path: str, body: dict[str, Any] | None = None) -> None:
+    async def _command(
+        self,
+        method: str,
+        path: str,
+        body: dict[str, Any] | None = None,
+        query: Mapping[str, str | int] | None = None,
+        repeat: int = 1,
+    ) -> None:
         """Aplica una orden después de las anteriores, sin acumular si Spotify no responde."""
         if self._queued_commands >= MAX_QUEUED_COMMANDS:
             raise SpotifyError(BUSY_MESSAGE)
         self._queued_commands += 1
         try:
             async with self._command_lock:
-                await self._send_command(method, path, body)
+                for _ in range(repeat):
+                    await self._send_command(method, path, body, query)
         finally:
             self._queued_commands -= 1
         self.poke(AFTER_COMMAND_S)
 
-    async def _send_command(self, method: str, path: str, body: dict[str, Any] | None) -> None:
+    async def _send_command(
+        self,
+        method: str,
+        path: str,
+        body: dict[str, Any] | None,
+        query: Mapping[str, str | int] | None = None,
+    ) -> None:
         try:
             try:
-                await self._call(method, path, body=body)
+                await self._call(method, path, query, body)
             except SpotifyApiError as exc:
                 if not exc.no_device:
                     raise
-                await self._call(method, path, {"device_id": await self._device()}, body)
+                device = {"device_id": await self._device()}
+                await self._call(method, path, {**(query or {}), **device}, body)
         except SpotifyApiError as exc:
             if exc.status >= 500:
                 raise
@@ -753,15 +926,44 @@ class SpotifyBridge:
         method, path = PLAYER_COMMANDS[action]
         await self._command(method, path)
 
-    async def play(self, context: str, track: str | None) -> None:
-        """Reproduce una playlist, desde el principio o desde una de sus canciones."""
-        body: dict[str, Any] = {"context_uri": context}
-        if track is not None:
-            body["offset"] = {"uri": track}
+    async def play(
+        self, context: str | None, track: str | None, uris: list[str] | None = None
+    ) -> None:
+        """Reproduce una playlist o álbum (desde una canción) o una lista de canciones.
+
+        Con ``context`` la música sigue con el resto de esa playlist o álbum. Sin él, sigue con
+        ``uris`` (las canciones que el celular tenía a continuación, como en Me gusta).
+        """
+        body: dict[str, Any]
+        if context is not None:
+            body = {"context_uri": context}
+            if track is not None:
+                body["offset"] = {"uri": track}
+        elif uris:
+            body = {"uris": uris[:MAX_PLAY_URIS]}
+        elif track is not None:
+            body = {"uris": [track]}
+        else:
+            raise SpotifyError(COMMAND_REFUSED_MESSAGE)
         await self._command("PUT", "/me/player/play", body)
 
-    async def open_playlist(self, backend: PlatformBackend, uri: str) -> None:
-        """Abre la playlist en la app de la PC; sin la app, en el navegador de la PC."""
+    async def add_to_queue(self, uri: str) -> None:
+        await self._command("POST", "/me/player/queue", query={"uri": uri})
+
+    async def seek(self, position_ms: int) -> None:
+        """Avanza o retrocede dentro de la canción que suena."""
+        position = max(0, min(position_ms, MAX_POSITION_MS))
+        await self._command("PUT", "/me/player/seek", query={"position_ms": position})
+        if self._player is not None:
+            self._player = self._player | {"progress_ms": position}  # sin esperar al sondeo
+            self._player_at = time.monotonic()
+
+    async def skip(self, count: int) -> None:
+        """Salta a una canción de la cola. Spotify no tiene una orden para ir directo a ella."""
+        await self._command("POST", "/me/player/next", repeat=max(1, min(count, QUEUE_LIMIT)))
+
+    async def open_in_app(self, backend: PlatformBackend, uri: str) -> None:
+        """Abre la playlist o álbum en la app de la PC; sin la app, en el navegador de la PC."""
         allowed = self._store.settings.allowed_url_schemes
         if "spotify" in allowed:
             try:
@@ -771,7 +973,8 @@ class SpotifyBridge:
                 log.info("La app de Spotify no abrió la playlist: se usa el navegador")
         if "https" not in allowed:
             raise SpotifyError(SCHEME_BLOCKED_MESSAGE)
-        await backend.open_uri("https://open.spotify.com/playlist/" + uri.rsplit(":", 1)[1])
+        _, kind, item_id = uri.split(":")
+        await backend.open_uri(f"https://open.spotify.com/{kind}/{item_id}")
 
     # ------------------------------------------------------------------- bucle
     def _parse_player(self, raw: Any) -> dict[str, Any] | None:
@@ -783,8 +986,14 @@ class SpotifyBridge:
         album = _mapping(item.get("album"))
         artists = [_mapping(a).get("name") for a in item.get("artists") or []]
         names = ", ".join(a for a in artists if isinstance(a, str))
+        progress = state.get("progress_ms")
+        duration = item.get("duration_ms")
+        uri = item.get("uri")
         return {
             "playing": state.get("is_playing") is True,
+            "uri": uri if isinstance(uri, str) else None,
+            "progress_ms": progress if isinstance(progress, int) else 0,
+            "duration_ms": duration if isinstance(duration, int) else 0,
             "title": str(item.get("name") or "Spotify"),
             "artists": names or str(_mapping(item.get("show")).get("name") or ""),
             "device": str(_mapping(state.get("device")).get("name") or ""),
@@ -813,6 +1022,7 @@ class SpotifyBridge:
                 if session == self._session:
                     self._set_status(SpotifyStatus.ONLINE)
                     self._player = self._parse_player(raw)
+                    self._player_at = time.monotonic()
                     self._failures = 0
         await self._publish()
         return max(delay, self._retry_at - time.monotonic())

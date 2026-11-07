@@ -294,6 +294,7 @@ async def test_unlink_forgets_tokens_and_covers(bridge: SpotifyBridge) -> None:
         "message": spotify_module.NOT_LINKED_MESSAGE,
         "user": None,
         "player": None,
+        "relink": False,
     }
 
 
@@ -607,7 +608,7 @@ async def test_free_account_gets_a_clear_message(bridge: SpotifyBridge, fake: Fa
 
 async def test_open_playlist_uses_the_app(bridge: SpotifyBridge) -> None:
     backend = FakeBackend()
-    await bridge.open_playlist(backend, "spotify:playlist:abc")
+    await bridge.open_in_app(backend, "spotify:playlist:abc")
     assert backend.calls == [("open_uri", ("spotify:playlist:abc",))]
 
 
@@ -619,7 +620,7 @@ async def test_open_playlist_falls_back_to_the_browser(bridge: SpotifyBridge) ->
             await super().open_uri(uri)
 
     backend = NoApp()
-    await bridge.open_playlist(backend, "spotify:playlist:abc")
+    await bridge.open_in_app(backend, "spotify:playlist:abc")
     assert backend.calls == [("open_uri", ("https://open.spotify.com/playlist/abc",))]
 
 
@@ -627,14 +628,14 @@ async def test_open_playlist_is_refused_if_no_scheme_is_allowed(bridge: SpotifyB
     bridge._store.update(allowed_url_schemes=["steam"])
     backend = FakeBackend()
     with pytest.raises(SpotifyError, match="no permiten"):
-        await bridge.open_playlist(backend, "spotify:playlist:abc")
+        await bridge.open_in_app(backend, "spotify:playlist:abc")
     assert not backend.calls
 
 
 async def test_open_playlist_respects_the_allowed_schemes(bridge: SpotifyBridge) -> None:
     bridge._store.update(allowed_url_schemes=["https"])
     backend = FakeBackend()
-    await bridge.open_playlist(backend, "spotify:playlist:abc")
+    await bridge.open_in_app(backend, "spotify:playlist:abc")
     assert backend.calls == [("open_uri", ("https://open.spotify.com/playlist/abc",))]
 
 
@@ -698,7 +699,7 @@ async def test_commands_keep_the_order_of_the_taps(
 ) -> None:
     done: list[str] = []
 
-    async def send(_method: str, path: str, _body: Any) -> None:
+    async def send(_method: str, path: str, *_rest: Any) -> None:
         await asyncio.sleep(0.05 if path.endswith("play") else 0)  # la primera tarda más
         done.append(path)
 
@@ -747,8 +748,12 @@ async def test_polls_the_player_while_someone_watches(
         await until(lambda: bridge.payload()["player"] is not None)
         data = bridge.payload()
     assert data["user"] == "Demo"
+    assert 0 <= data["player"].pop("progress_age_ms") < 5000
     assert data["player"] == {
         "playing": True,
+        "uri": None,
+        "progress_ms": 0,
+        "duration_ms": 0,
         "title": "Tema",
         "artists": "Uno",
         "device": "MI-PC",
@@ -880,6 +885,7 @@ async def test_unlinking_during_a_poll_leaves_nothing_on_screen(
         "message": spotify_module.NOT_LINKED_MESSAGE,
         "user": None,
         "player": None,
+        "relink": False,
     }
 
 
@@ -1212,3 +1218,330 @@ def test_new_clients_do_not_count_as_spotify_viewers(client: TestClient, state: 
         ws.send_json({"type": "ping"})
         receive_until(ws, "pong")
         assert state.hub.subscribers("spotify") == 0
+
+
+# ------------------------------------------------- biblioteca, búsqueda y cola
+from tests.fake_spotify import album, simple_track  # noqa: E402
+
+
+def recent_entry(track_id: str, context: str | None) -> dict[str, Any]:
+    entry = {"track": track(track_id)["item"], "played_at": "2026-11-07T01:00:00Z"}
+    entry["context"] = {"type": "playlist", "uri": context} if context else None
+    return entry
+
+
+async def test_recent_keeps_order_skips_repeats_and_knows_the_context(
+    bridge: SpotifyBridge, fake: FakeSpotify
+) -> None:
+    fake.recent = [
+        recent_entry("a", "spotify:playlist:mix"),
+        recent_entry("b", None),
+        recent_entry("a", "spotify:playlist:mix"),  # se escuchó dos veces
+        recent_entry("c", "spotify:artist:xyz"),  # contexto que no se puede reproducir
+    ]
+    items = (await bridge.recent())["items"]
+    assert [i["uri"] for i in items] == ["spotify:track:a", "spotify:track:b", "spotify:track:c"]
+    assert [i["context"] for i in items] == ["spotify:playlist:mix", None, None]
+
+
+async def test_liked_songs_paginate(bridge: SpotifyBridge, fake: FakeSpotify) -> None:
+    fake.liked = [{"added_at": "x", "track": track(f"t{i}")["item"]} for i in range(60)]
+    first = await bridge.liked(0)
+    assert len(first["items"]) == 50
+    assert first["next_offset"] == 50
+    assert first["items"][0]["uri"] == "spotify:track:t0"
+    assert (await bridge.liked(50))["next_offset"] is None
+
+
+async def test_saved_albums_and_their_songs(bridge: SpotifyBridge, fake: FakeSpotify) -> None:
+    fake.saved_albums = [
+        {"added_at": "x", "album": album("disco", images=[image(f"{fake.url}/img/d.jpg")])}
+    ]
+    fake.album_tracks["disco"] = [simple_track("s1", "Uno"), simple_track("s2", "Dos")]
+    albums = (await bridge.albums(0))["items"]
+    assert albums[0] == {
+        "id": "disco",
+        "uri": "spotify:album:disco",
+        "name": "Álbum disco",
+        "artists": "Artista",
+        "total": 2,
+        "image": albums[0]["image"],
+    }
+    assert albums[0]["image"]
+    page = await bridge.album_tracks("disco", 0)
+    assert [t["title"] for t in page["items"]] == ["Uno", "Dos"]
+    assert page["items"][0]["album_uri"] == "spotify:album:disco"  # para seguir con el álbum
+
+
+async def test_missing_album_is_reported_as_unavailable(bridge: SpotifyBridge) -> None:
+    assert (await bridge.album_tracks("inexistente", 0))["available"] is False
+
+
+async def test_search_respects_spotifys_limit_and_skips_nulls(
+    bridge: SpotifyBridge, fake: FakeSpotify
+) -> None:
+    fake.liked = [
+        {"added_at": "x", "track": track(f"t{i}", f"Rock {i}")["item"]} for i in range(15)
+    ]
+    fake.saved_albums = [{"added_at": "x", "album": album("r", name="Rock clásico")}]
+    fake.playlists = [playlist("rockp", name="Rock de los 90"), playlist("otra", name="Jazz")]
+    found = await bridge.search("rock")
+    assert fake.searches[0]["limit"] == "10"
+    assert fake.searches[0]["type"] == "track,album,playlist"
+    assert len(found["tracks"]) == 10
+    assert (
+        found["tracks"][0]["album_uri"] == "spotify:album:a1"
+        or found["tracks"][0]["album_uri"] is None
+    )
+    assert [a["id"] for a in found["albums"]] == ["r"]
+    assert [p["id"] for p in found["playlists"]] == ["rockp"]
+    assert found["playlists"][0]["readable"] is True
+
+
+async def test_search_text_is_truncated(bridge: SpotifyBridge, fake: FakeSpotify) -> None:
+    await bridge.search("x" * 500)
+    assert len(fake.searches[0]["q"]) == spotify_module.MAX_QUERY
+
+
+async def test_queue_shows_whats_next(bridge: SpotifyBridge, fake: FakeSpotify) -> None:
+    fake.queue = [track(f"q{i}")["item"] for i in range(30)]
+    items = (await bridge.queue())["items"]
+    assert len(items) == spotify_module.QUEUE_LIMIT
+    assert items[0]["uri"] == "spotify:track:q0"
+
+
+@pytest.mark.parametrize(
+    "method,path",
+    [
+        ("recent", "/v1/me/player/recently-played"),
+        ("liked", "/v1/me/tracks"),
+        ("albums", "/v1/me/albums"),
+    ],
+)
+async def test_section_without_permission_asks_to_relink(
+    bridge: SpotifyBridge, fake: FakeSpotify, method: str, path: str
+) -> None:
+    fake.denied.add(path)
+    call = getattr(bridge, method)
+    with pytest.raises(SpotifyError, match="vuelve a vincular"):
+        await (call() if method == "recent" else call(0))
+
+
+async def test_old_link_without_the_new_permissions_is_flagged(
+    bridge: SpotifyBridge, fake: FakeSpotify
+) -> None:
+    fake.granted_scope = " ".join(SCOPES[:4])  # vinculada con la versión anterior
+    await bridge._poll()
+    assert bridge.payload()["relink"] is True
+    fake.granted_scope = " ".join(SCOPES)
+    fake.access_token = "nuevo"
+    bridge._access = None
+    await bridge._poll()
+    assert bridge.payload()["relink"] is False
+
+
+async def test_unknown_permissions_are_not_flagged(bridge: SpotifyBridge) -> None:
+    await bridge._poll()  # Spotify no informó los permisos
+    assert bridge.payload()["relink"] is False
+
+
+async def test_play_liked_songs_continues_with_the_following_ones(
+    bridge: SpotifyBridge, fake: FakeSpotify
+) -> None:
+    uris = [f"spotify:track:t{i}" for i in range(80)]
+    await bridge.play(None, None, uris)
+    assert fake.commands[0][2] == {"uris": uris[: spotify_module.MAX_PLAY_URIS]}
+
+
+async def test_play_from_an_album(bridge: SpotifyBridge, fake: FakeSpotify) -> None:
+    await bridge.play("spotify:album:disco", "spotify:track:s2")
+    assert fake.commands[0][2] == {
+        "context_uri": "spotify:album:disco",
+        "offset": {"uri": "spotify:track:s2"},
+    }
+
+
+async def test_play_a_single_song(bridge: SpotifyBridge, fake: FakeSpotify) -> None:
+    await bridge.play(None, "spotify:track:solo")
+    assert fake.commands[0][2] == {"uris": ["spotify:track:solo"]}
+
+
+async def test_add_to_queue(bridge: SpotifyBridge, fake: FakeSpotify) -> None:
+    await bridge.add_to_queue("spotify:track:x")
+    assert fake.commands[0][0] == "POST /v1/me/player/queue"
+    assert fake.command_queries[0] == {"uri": "spotify:track:x"}
+
+
+async def test_seek_moves_within_the_song_and_updates_at_once(
+    bridge: SpotifyBridge, fake: FakeSpotify
+) -> None:
+    bridge._player = {"progress_ms": 1000, "duration_ms": 200000}
+    await bridge.seek(90500)
+    assert fake.commands[0][0] == "PUT /v1/me/player/seek"
+    assert fake.command_queries[0] == {"position_ms": "90500"}
+    assert bridge._player["progress_ms"] == 90500
+
+
+async def test_queue_without_active_device_keeps_the_song(
+    bridge: SpotifyBridge, fake: FakeSpotify
+) -> None:
+    fake.active_device = False
+    fake.devices = [{"id": "pc", "type": "Computer"}]
+    await bridge.add_to_queue("spotify:track:x")
+    assert fake.command_queries[0] == {"uri": "spotify:track:x", "device_id": "pc"}
+
+
+async def test_player_reports_progress_for_the_seek_bar(
+    bridge: SpotifyBridge, fake: FakeSpotify
+) -> None:
+    fake.player = {
+        "is_playing": True,
+        "progress_ms": 61000,
+        "item": {"uri": "spotify:track:a", "name": "Tema", "duration_ms": 200000},
+    }
+    await bridge._poll()
+    player = bridge.payload()["player"]
+    assert player["progress_ms"] == 61000
+    assert player["duration_ms"] == 200000
+    assert player["uri"] == "spotify:track:a"
+
+
+async def test_open_album_in_the_browser(bridge: SpotifyBridge) -> None:
+    bridge._store.update(allowed_url_schemes=["https"])
+    backend = FakeBackend()
+    await bridge.open_in_app(backend, "spotify:album:disco")
+    assert backend.calls == [("open_uri", ("https://open.spotify.com/album/disco",))]
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "/api/spotify/recent",
+        "/api/spotify/liked",
+        "/api/spotify/albums",
+        "/api/spotify/queue",
+        "/api/spotify/albums/abc/tracks",
+        "/api/spotify/search?q=rock",
+    ],
+)
+def test_new_sections_require_token_and_widget(
+    client: TestClient, linked: AppState, path: str
+) -> None:
+    assert client.get(path).status_code == 401
+    token = local_token(client)
+    assert client.get(path, headers=auth(token)).status_code == 200
+    remove_widget(client, "spotify")
+    assert client.get(path, headers=auth(token)).status_code == 403
+
+
+@pytest.mark.parametrize("q", ["", "   ", "x" * 101])
+def test_search_text_is_validated(client: TestClient, linked: AppState, q: str) -> None:
+    res = client.get("/api/spotify/search", params={"q": q}, headers=auth(local_token(client)))
+    assert res.status_code == 422
+
+
+def test_section_without_permission_explains_it(
+    client: TestClient, linked: AppState, fake: FakeSpotify
+) -> None:
+    fake.denied.add("/v1/me/tracks")
+    res = client.get("/api/spotify/liked", headers=auth(local_token(client)))
+    assert res.status_code == 502
+    assert "vuelve a vincular" in res.json()["detail"]
+
+
+@pytest.mark.parametrize(
+    "message",
+    [
+        {"type": "spotify.play"},
+        {"type": "spotify.play", "uris": []},
+        {"type": "spotify.play", "uris": ["spotify:track:a"] * 51},
+        {"type": "spotify.play", "uris": ["spotify:track:a", "spotify:local:x"]},
+        {"type": "spotify.play", "context": "spotify:artist:abc"},
+        {"type": "spotify.queue", "uri": "spotify:album:abc"},
+        {"type": "spotify.seek", "position_ms": -1},
+        {"type": "spotify.seek", "position_ms": "diez"},
+        {"type": "spotify.seek", "position_ms": 10**12},
+        {"type": "spotify.open", "uri": "spotify:track:abc"},
+    ],
+)
+def test_new_commands_validate_input(
+    client: TestClient, linked: AppState, fake: FakeSpotify, message: dict[str, Any]
+) -> None:
+    with client.websocket_connect(f"{WS_URL}?token={local_token(client)}") as ws:
+        ws.send_json(message)
+        assert receive_until(ws, "error")["data"]["message"] == "Comando inválido"
+    assert not fake.commands
+
+
+def test_fifty_songs_fit_in_one_message(
+    client: TestClient, linked: AppState, fake: FakeSpotify
+) -> None:
+    """El celular manda hasta 50 canciones: deben caber en el límite del WebSocket."""
+    uris = [f"spotify:track:{'A' * 22}" for _ in range(spotify_module.MAX_PLAY_URIS)]
+    with client.websocket_connect(f"{WS_URL}?token={local_token(client)}") as ws:
+        ws.send_json({"type": "spotify.play", "uris": uris})
+        wait_for(lambda: bool(fake.commands))
+    assert fake.commands[0][2] == {"uris": uris}
+
+
+def test_seek_and_queue_commands_reach_spotify(
+    client: TestClient, linked: AppState, fake: FakeSpotify
+) -> None:
+    with client.websocket_connect(f"{WS_URL}?token={local_token(client)}") as ws:
+        ws.send_json({"type": "spotify.seek", "position_ms": 30000})
+        ws.send_json({"type": "spotify.queue", "uri": "spotify:track:x"})
+        wait_for(lambda: len(fake.commands) == 2)
+    assert [c[0] for c in fake.commands] == ["PUT /v1/me/player/seek", "POST /v1/me/player/queue"]
+
+
+async def test_progress_says_how_old_it_is(bridge: SpotifyBridge, fake: FakeSpotify) -> None:
+    """Un celular que se suscribe tarde no debe contar el tiempo desde cero."""
+    fake.player = {"is_playing": True, "progress_ms": 1000, "item": {"duration_ms": 9000}}
+    await bridge._poll()
+    bridge._player_at -= 3.0  # la consulta fue hace 3 s
+    age = bridge.payload()["player"]["progress_age_ms"]
+    assert 3000 <= age < 4000
+
+
+async def test_skip_to_a_song_in_the_queue_keeps_the_rest(
+    bridge: SpotifyBridge, fake: FakeSpotify
+) -> None:
+    await bridge.skip(3)
+    assert [c[0] for c in fake.commands] == ["POST /v1/me/player/next"] * 3
+
+
+async def test_skip_is_bounded(bridge: SpotifyBridge, fake: FakeSpotify) -> None:
+    await bridge.skip(500)
+    assert len(fake.commands) == spotify_module.QUEUE_LIMIT
+
+
+async def test_forbidden_section_with_the_permission_is_not_a_relink(
+    bridge: SpotifyBridge, fake: FakeSpotify
+) -> None:
+    """Con el permiso concedido, un 403 es otra cosa (cuenta fuera de la lista)."""
+    fake.granted_scope = " ".join(SCOPES)
+    fake.denied.add("/v1/me/tracks")
+    await bridge._poll()
+    with pytest.raises(SpotifyError) as error:
+        await bridge.liked(0)
+    assert "vuelve a vincular" not in str(error.value)
+    assert str(error.value) == spotify_module.FORBIDDEN_MESSAGE
+
+
+@pytest.mark.parametrize("count", [0, 21, -1])
+def test_skip_count_is_validated(
+    client: TestClient, linked: AppState, fake: FakeSpotify, count: int
+) -> None:
+    with client.websocket_connect(f"{WS_URL}?token={local_token(client)}") as ws:
+        ws.send_json({"type": "spotify.skip", "count": count})
+        assert receive_until(ws, "error")["data"]["message"] == "Comando inválido"
+    assert not fake.commands
+
+
+def test_every_spotify_command_runs_apart(client: TestClient) -> None:
+    """Todas las órdenes de Spotify deben ir en segundo plano para no bloquear el volumen."""
+    from phonedeck import live
+
+    spotify_commands = [m for t, (m, _) in live.COMMANDS.items() if t.startswith("spotify.")]
+    assert spotify_commands
+    assert all(issubclass(m, live._SpotifyMsg) for m in spotify_commands)

@@ -11,8 +11,11 @@ Son pocos comandos, con parámetros acotados:
 - ``pomodoro.config``  ``{"work": min, "short_break": min, "long_break": min}``
 - ``obs.scene``   ``{"name": escena}``    (solo escenas de la lista actual de OBS)
 - ``spotify.control`` ``{"action": "play" | "pause" | "next" | "previous"}``
-- ``spotify.play``    ``{"context": URI de playlist, "track": URI de canción o null}``
-- ``spotify.open``    ``{"uri": URI de playlist}`` (la abre en la PC)
+- ``spotify.play``    ``{"context": playlist o álbum, "track": canción, "uris": [canciones]}``
+- ``spotify.queue``   ``{"uri": canción}`` (la añade a la cola)
+- ``spotify.skip``    ``{"count": 1..20}`` (salta a esa canción de la cola)
+- ``spotify.seek``    ``{"position_ms": 0..24 h}`` (avanza dentro de la canción)
+- ``spotify.open``    ``{"uri": playlist o álbum}`` (lo abre en la PC)
 
 Y solo se aceptan si el widget correspondiente está en la configuración: si el usuario
 quita el widget, el celular deja de poder usar ese control.
@@ -23,16 +26,23 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-from typing import Any, Literal
+from typing import Annotated, Any, Literal, Self
 
 from fastapi import WebSocket, WebSocketDisconnect
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
 from phonedeck.platform.base import MediaKey, PlatformError
 from phonedeck.pomodoro import MAX_MINUTES, Durations
 from phonedeck.services.pomodoro import publish as publish_pomodoro
 from phonedeck.services.volume import volume_payload
-from phonedeck.spotify import ITEM_URI_PATTERN, PLAYLIST_URI_PATTERN, MediaAction
+from phonedeck.spotify import (
+    CONTEXT_URI_PATTERN,
+    ITEM_URI_PATTERN,
+    MAX_PLAY_URIS,
+    MAX_POSITION_MS,
+    QUEUE_LIMIT,
+    MediaAction,
+)
 from phonedeck.state import AppState
 
 log = logging.getLogger(__name__)
@@ -81,17 +91,42 @@ class ObsScene(_Msg):
     name: str = Field(min_length=1, max_length=256)
 
 
-class SpotifyControl(_Msg):
+class _SpotifyMsg(_Msg):
+    """Órdenes para Spotify: van por Internet y se ejecutan aparte."""
+
+
+class SpotifyControl(_SpotifyMsg):
     action: MediaAction
 
 
-class SpotifyPlay(_Msg):
-    context: str = Field(pattern=PLAYLIST_URI_PATTERN)
+class SpotifyPlay(_SpotifyMsg):
+    context: str | None = Field(default=None, pattern=CONTEXT_URI_PATTERN)
     track: str | None = Field(default=None, pattern=ITEM_URI_PATTERN)
+    uris: list[Annotated[str, Field(pattern=ITEM_URI_PATTERN)]] | None = Field(
+        default=None, min_length=1, max_length=MAX_PLAY_URIS
+    )
+
+    @model_validator(mode="after")
+    def _something_to_play(self) -> Self:
+        if self.context is None and self.track is None and not self.uris:
+            raise ValueError("Falta qué reproducir")
+        return self
 
 
-class SpotifyOpen(_Msg):
-    uri: str = Field(pattern=PLAYLIST_URI_PATTERN)
+class SpotifyQueue(_SpotifyMsg):
+    uri: str = Field(pattern=ITEM_URI_PATTERN)
+
+
+class SpotifySeek(_SpotifyMsg):
+    position_ms: int = Field(ge=0, le=MAX_POSITION_MS)
+
+
+class SpotifyOpen(_SpotifyMsg):
+    uri: str = Field(pattern=CONTEXT_URI_PATTERN)
+
+
+class SpotifySkip(_SpotifyMsg):
+    count: int = Field(ge=1, le=QUEUE_LIMIT)
 
 
 # tipo de mensaje → (modelo, widget requerido en la config)
@@ -106,6 +141,9 @@ COMMANDS: dict[str, tuple[type[_Msg], str]] = {
     "obs.scene": (ObsScene, "obs"),
     "spotify.control": (SpotifyControl, "spotify"),
     "spotify.play": (SpotifyPlay, "spotify"),
+    "spotify.queue": (SpotifyQueue, "spotify"),
+    "spotify.seek": (SpotifySeek, "spotify"),
+    "spotify.skip": (SpotifySkip, "spotify"),
     "spotify.open": (SpotifyOpen, "spotify"),
 }
 
@@ -124,9 +162,15 @@ async def _run_spotify(state: AppState, ws: WebSocket, cmd: _Msg) -> None:
         if isinstance(cmd, SpotifyControl):
             await state.spotify.control(cmd.action)
         elif isinstance(cmd, SpotifyPlay):
-            await state.spotify.play(cmd.context, cmd.track)
+            await state.spotify.play(cmd.context, cmd.track, cmd.uris)
+        elif isinstance(cmd, SpotifyQueue):
+            await state.spotify.add_to_queue(cmd.uri)
+        elif isinstance(cmd, SpotifySeek):
+            await state.spotify.seek(cmd.position_ms)
+        elif isinstance(cmd, SpotifySkip):
+            await state.spotify.skip(cmd.count)
         elif isinstance(cmd, SpotifyOpen):
-            await state.spotify.open_playlist(state.backend, cmd.uri)
+            await state.spotify.open_in_app(state.backend, cmd.uri)
     except PlatformError as exc:
         await _report(ws, str(exc))
     except Exception:
@@ -173,7 +217,7 @@ async def handle_client_message(state: AppState, ws: WebSocket, raw: str) -> Non
         await _send(ws, "error", {"message": "Comando inválido"})
         return
 
-    if isinstance(cmd, SpotifyControl | SpotifyPlay | SpotifyOpen):
+    if isinstance(cmd, _SpotifyMsg):
         # Aparte: si Spotify tarda, el volumen y demás controles de este celular no esperan.
         task = asyncio.create_task(_run_spotify(state, ws, cmd))
         _spotify_tasks.add(task)

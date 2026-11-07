@@ -1,7 +1,19 @@
 # Conectar Spotify
 
-La página **Spotify** muestra tus playlists y sus canciones, y controla la música que suena en
-tu PC. Se configura una sola vez.
+La página **Spotify** controla la música que suena en tu PC. Tiene cinco pestañas:
+
+- **Inicio:** lo que escuchaste hace poco.
+- **Playlists:** tus playlists y sus canciones.
+- **Me gusta:** tus canciones guardadas.
+- **Álbumes:** tus álbumes guardados, con todas sus canciones.
+- **Buscar:** cualquier canción, álbum o playlist de Spotify.
+
+Toca una canción para que suene en la PC; después sigue con el resto de su playlist o álbum.
+**Mantenla pulsada** (o clic derecho en la PC) para añadirla a la cola. Toca la barra de abajo
+para abrir **Reproduciendo**: ahí puedes arrastrar la barra para ir a cualquier parte de la
+canción y ver qué viene en la cola.
+
+Se configura una sola vez.
 
 ## Qué necesitas
 
@@ -33,16 +45,23 @@ app. Spotify admite hasta 5 cuentas por app en modo de desarrollo.
 | `playlist-read-private` | Ver tus playlists privadas |
 | `playlist-read-collaborative` | Ver las playlists colaborativas |
 | `user-read-playback-state` | Mostrar qué suena y en qué dispositivo |
-| `user-modify-playback-state` | Reproducir, pausar y cambiar de canción |
+| `user-modify-playback-state` | Reproducir, pausar, cambiar de canción, moverte dentro de ella y añadir a la cola |
+| `user-read-recently-played` | La pestaña Inicio |
+| `user-library-read` | Las pestañas Me gusta y Álbumes |
+
+Si vinculaste la cuenta antes de que existieran Inicio, Me gusta y Álbumes, PhoneDeck te pedirá
+**volver a vincular** una vez para conceder los permisos nuevos.
 
 ## Qué debes saber
 
 - **La música suena en la PC, no en el celular.** Spotify debe estar abierto en la PC o en otro
   dispositivo tuyo.
-- **Solo se ven las canciones de tus playlists.** Spotify solo las entrega si creaste la
-  playlist o colaboras en ella. Las demás se pueden reproducir o abrir, pero no listar.
-- **Cualquier celular emparejado ve tus playlists**, incluidas las privadas. Para impedirlo,
-  quita el widget de Spotify con el editor.
+- **Las playlists que solo sigues no muestran sus canciones.** Spotify solo las entrega si
+  creaste la playlist o colaboras en ella. Aparecen marcadas con **Solo reproducir**: se pueden
+  reproducir o abrir, y para elegir una canción concreta, búscala en **Buscar**.
+- **La búsqueda da hasta 10 resultados por tipo**, el máximo que permite Spotify.
+- **Cualquier celular emparejado ve tus playlists**, incluidas las privadas, y también lo que
+  escuchaste y tus canciones guardadas. Para impedirlo, quita el widget de Spotify con el editor.
 - **El token se guarda sin cifrar** en `settings.json`, en tu PC, igual que la contraseña de
   OBS. Nunca llega al celular.
 

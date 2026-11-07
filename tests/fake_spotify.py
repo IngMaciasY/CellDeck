@@ -40,6 +40,28 @@ def playlist(
     return data | extra
 
 
+def album(album_id: str, **extra: Any) -> dict[str, Any]:
+    return {
+        "id": album_id,
+        "uri": f"spotify:album:{album_id}",
+        "name": f"Álbum {album_id}",
+        "artists": [{"name": "Artista"}],
+        "total_tracks": 2,
+        "images": [],
+    } | extra
+
+
+def simple_track(track_id: str, title: str = "") -> dict[str, Any]:
+    """Canción como la devuelve /albums/{id}/tracks: sin álbum ni portada."""
+    return {
+        "type": "track",
+        "uri": f"spotify:track:{track_id}",
+        "name": title or f"Canción {track_id}",
+        "artists": [{"name": "Artista"}],
+        "duration_ms": 200000,
+    }
+
+
 def track(track_id: str, title: str = "", **extra: Any) -> dict[str, Any]:
     item = {
         "type": "track",
@@ -56,6 +78,14 @@ class FakeSpotify:
         self.playlists: list[dict[str, Any]] = [playlist("propia"), playlist("seguida", "spotify")]
         self.items: dict[str, list[dict[str, Any] | None]] = {"propia": [track("a1"), track("a2")]}
         self.player: dict[str, Any] | None = None
+        self.recent: list[dict[str, Any]] = []
+        self.liked: list[dict[str, Any]] = []
+        self.saved_albums: list[dict[str, Any]] = []
+        self.album_tracks: dict[str, list[dict[str, Any]]] = {}
+        self.queue: list[dict[str, Any]] = []
+        self.searches: list[dict[str, str]] = []
+        self.denied: set[str] = set()  # rutas sin permiso concedido
+        self.granted_scope: str | None = None  # None: no se informa
         self.devices: list[dict[str, Any]] = []
         self.active_device = True
         self.client_id = "0123456789abcdef0123456789abcdef"
@@ -76,6 +106,7 @@ class FakeSpotify:
         self.image_redirect: str | None = None
         self.calls: list[str] = []  # "GET /v1/me/player"
         self.commands: list[tuple[str, str, Any]] = []
+        self.command_queries: list[dict[str, str]] = []
         self.content_types: list[str] = []
         self.tokens_requested = 0
         self.last_challenge = ""
@@ -188,6 +219,8 @@ class FakeSpotify:
         }
         if with_refresh:
             body["refresh_token"] = self.refresh_token
+        if self.granted_scope is not None:
+            body["scope"] = self.granted_scope
         return body
 
     def serve_image(self, http: Any) -> None:
@@ -210,7 +243,11 @@ class FakeSpotify:
         if self.rate_limited is not None:
             http.reply(429, {"error": {"status": 429}}, {"Retry-After": str(self.rate_limited)})
             return
+        if path in self.denied:
+            http.reply(403, {"error": {"status": 403, "message": "Insufficient client scope"}})
+            return
         match = re.fullmatch(r"/v1/playlists/([^/]+)/items", path)
+        album_match = re.fullmatch(r"/v1/albums/([^/]+)/tracks", path)
         if path == "/v1/me":
             status = self.me_status
             http.reply(
@@ -228,6 +265,22 @@ class FakeSpotify:
             http.reply(204 if self.player is None else 200, self.player_state(query))
         elif path == "/v1/me/player/devices":
             http.reply(200, {"devices": self.devices})
+        elif path == "/v1/me/player/recently-played":
+            self.page(http, self.recent, query)
+        elif path == "/v1/me/tracks":
+            self.page(http, self.liked, query)
+        elif path == "/v1/me/albums":
+            self.page(http, self.saved_albums, query)
+        elif album_match:
+            found = self.album_tracks.get(album_match.group(1))
+            if found is None:
+                http.reply(404, {"error": {"status": 404, "message": "Non existing id"}})
+            else:
+                self.page(http, found, query)
+        elif path == "/v1/search":
+            self.search(http, query)
+        elif path == "/v1/me/player/queue" and method == "GET":
+            http.reply(200, {"currently_playing": None, "queue": self.queue})
         else:
             self.command(http, method, path, query, raw)
 
@@ -252,6 +305,7 @@ class FakeSpotify:
             return
         device = query.get("device_id", "")
         self.content_types.append(http.headers.get("Content-Type", ""))
+        self.command_queries.append(query)
         self.commands.append((f"{method} {path}", device, json.loads(raw) if raw else None))
         if self.command_text is not None:
             http.send_response(200)
@@ -260,6 +314,31 @@ class FakeSpotify:
             http.wfile.write(self.command_text)
             return
         http.reply(204)
+
+    def search(self, http: Any, query: dict[str, str]) -> None:
+        self.searches.append(query)
+        text = query.get("q", "").lower()
+        limit = int(query.get("limit", 5))
+        if limit > 10:
+            http.reply(400, {"error": {"status": 400, "message": "Invalid limit"}})
+            return
+
+        def found(items: list[dict[str, Any]]) -> dict[str, Any]:
+            hits = [i for i in items if i and text in str(i.get("name", "")).lower()][:limit]
+            return {"items": hits, "total": len(hits), "next": None}
+
+        tracks = [entry["item"] for entry in self.liked if entry.get("item")]
+        tracks += [entry["track"] for entry in self.liked if entry.get("track")]
+        albums = [entry["album"] for entry in self.saved_albums]
+        http.reply(
+            200,
+            {
+                "tracks": found(tracks),
+                "albums": found(albums),
+                "playlists": found(self.playlists)
+                | {"items": found(self.playlists)["items"] + [None]},
+            },
+        )
 
     def page(self, http: Any, items: list[Any], query: dict[str, str]) -> None:
         limit = int(query.get("limit", 20))

@@ -2,6 +2,28 @@
 
 Registro de lo que se eligió, lo que se descartó y por qué. Lo más reciente va primero.
 
+## Spotify: biblioteca, búsqueda y Reproduciendo (2026-11-07)
+
+- **Elegido:** pestañas Inicio · Playlists · Me gusta · Álbumes · Buscar, más una vista
+  Reproduciendo. Son las fuentes que Spotify sigue dando en modo de desarrollo.
+  **Descartado:** una pantalla de inicio con filas horizontales al estilo Android Auto. Pide más
+  desplazamiento en un celular vertical.
+- **Buscar es la forma de elegir cualquier canción**, incluidas las de playlists ajenas, cuya
+  lista Spotify no entrega. Esas playlists se marcan con "Solo reproducir".
+- **Al tocar una canción** sigue con su playlist o álbum. En Me gusta no hay contexto que Spotify
+  documente para reproducir, así que el celular manda las 50 canciones siguientes.
+  **Descartado:** el contexto `spotify:user:…:collection`, que no está documentado para
+  reproducir. Son 50 y no más porque un mensaje del WebSocket admite 4096 bytes.
+- **Mantener pulsado añade a la cola** (clic derecho en la PC). **Descartado:** un menú en cada
+  toque, que añade un paso a la acción más común.
+- **Barra de progreso:** la PC manda la posición cada 5 s y el celular la cuenta entre medias.
+  **Descartado:** consultar a Spotify cada segundo, que gastaría la cuota.
+- **Permisos nuevos:** `user-read-recently-played` y `user-library-read`. Spotify informa de los
+  permisos concedidos al renovar el token, y con eso se avisa de que hay que volver a vincular.
+  Si no los informa, no se avisa; la sección explica el error al abrirla.
+- **Búsqueda:** por HTTP con el botón o Enter, no mientras se escribe, para no gastar cuota.
+  Spotify limita a 10 resultados por tipo desde febrero de 2026.
+
 ## Spotify y menú de engranaje (2026-11-07)
 
 ### Cómo mostrar Spotify
