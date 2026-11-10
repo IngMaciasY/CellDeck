@@ -33,3 +33,18 @@ logs/
 Thumbs.db
 desktop.ini
 .DS_Store
+
+# Variables de entorno y secretos locales (PhoneDeck no usa .env, pero por si acaso)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Artefactos de publicación
+release/
+*.sha256
+
+# Herramientas locales de IA / editores
+.claude/
+*.code-workspace
