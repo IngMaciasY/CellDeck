@@ -48,3 +48,6 @@ release/
 # Herramientas locales de IA / editores
 .claude/
 *.code-workspace
+
+# Material para uso externo (logo y capturas para otra web); no se versiona
+Pivote/
