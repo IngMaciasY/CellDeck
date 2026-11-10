@@ -1,0 +1,67 @@
+name: Reportar un error
+description: Algo no funciona como debería
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Gracias por avisar. **No pegues tu PIN, tokens, contraseña de OBS ni Client ID de Spotify.**
+        Para problemas de seguridad usa el reporte privado (ver SECURITY.md).
+  - type: input
+    id: version
+    attributes:
+      label: Versión de PhoneDeck
+      description: Clic derecho en el icono de la bandeja, o la Release que descargaste.
+      placeholder: v0.1.0
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: ¿Cómo lo ejecutas?
+      options:
+        - PhoneDeck.exe (portable)
+        - PhoneDeck-win64.zip
+        - Desde el código (scripts\dev.bat)
+    validations:
+      required: true
+  - type: input
+    id: windows
+    attributes:
+      label: Versión de Windows
+      placeholder: Windows 11 23H2
+  - type: input
+    id: phone
+    attributes:
+      label: Celular y navegador
+      placeholder: Xiaomi Redmi 5 Plus, Chrome 138
+  - type: dropdown
+    id: connection
+    attributes:
+      label: Conexión
+      options:
+        - USB (adb reverse)
+        - WiFi
+        - En la propia PC
+  - type: textarea
+    id: steps
+    attributes:
+      label: Pasos para reproducirlo
+      placeholder: |
+        1. Abro la página Multimedia
+        2. Toco Play/Pausa
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Qué esperabas y qué pasó
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Registro (opcional)
+      description: Las últimas líneas de %APPDATA%\PhoneDeck\logs\phonedeck.log. Los tokens ya salen ocultos, pero revísalo antes de pegarlo.
+      render: text

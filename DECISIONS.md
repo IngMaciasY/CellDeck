@@ -2,6 +2,67 @@
 
 Registro de lo que se eligió, lo que se descartó y por qué. Lo más reciente va primero.
 
+## Repositorio público y Releases (2026-11-09)
+
+### Datos personales
+
+- **Comprobado:** el código y los 44 commits no contienen credenciales. El Client ID y el token
+  de Spotify, la contraseña de OBS, el PIN y el secreto viven en
+  `%APPDATA%\PhoneDeck\settings.json`, fuera del repositorio.
+- **Elegido:** quitar de la config de fábrica los botones de las apps del autor (Steam, Epic,
+  Visual Studio, Brave) y poner acciones que existen en cualquier Windows (Calculadora y
+  Configuración). El catálogo de apps sigue en el código y se ofrece desde el editor.
+  **Descartado:** dejarlos como ejemplo. En una PC sin esas apps se ven botones que no hacen
+  nada.
+- **Elegido:** mantener Spotify y OBS como integraciones opcionales que no se conectan hasta
+  que el usuario las configura. **Descartado:** quitarlas. No contienen datos del autor y son
+  funciones generales.
+- **Descartado:** un Client ID de Spotify dentro del .exe público. El modo de desarrollo admite
+  5 usuarios por app y obligaría al autor a aprobar a cada uno.
+- **Descartado:** `.env.example`. PhoneDeck no lee secretos de variables de entorno; cada
+  instalación genera los suyos. En su lugar, [docs/configuracion.md](docs/configuracion.md)
+  documenta `settings.json`.
+- **Historial:** se reescribe el autor de todos los commits con `git filter-repo`, conservando
+  las fechas, para usar el correo noreply de otra cuenta de GitHub. Se hace antes del primer
+  push, cuando reescribir no afecta a nadie. **Descartado:** aplastar todo en un commit, que
+  perdería el historial de decisiones.
+
+### Ramas y contribución
+
+- **Elegido:** GitHub Flow (`main` estable + ramas `feat/`, `fix/`… + PR con CI obligatoria).
+  **Descartado:** Git Flow con `develop`, que es demasiado proceso para un proyecto de este
+  tamaño y sin versiones paralelas que mantener.
+
+### Ejecutables
+
+- **Elegido:** publicar `PhoneDeck.exe` (un solo archivo) y `PhoneDeck-win64.zip` (carpeta). El
+  primero es lo más fácil de usar; el segundo arranca más rápido y dispara menos falsos
+  positivos del antivirus. **Descartado por ahora:** un instalador con Inno Setup. Añade otra
+  herramienta a la compilación y la app no necesita registrarse en el sistema.
+- **Nombres fijos** (`PhoneDeck.exe`, sin la versión): así
+  `releases/latest/download/PhoneDeck.exe` siempre funciona. La versión está en el título de la
+  Release y en las propiedades del .exe.
+- **Sin firma de código:** cuesta dinero o requiere verificar una identidad. Se compensa con el
+  SHA-256 y una atestación de compilación de GitHub (Sigstore), y el README explica el aviso de
+  SmartScreen.
+- **La Release se crea como borrador:** el dueño prueba el .exe en una PC real antes de
+  publicarlo. Las versiones `0.x` y las que llevan guion se marcan como preliminares.
+- **Versión en un solo sitio:** `src/phonedeck/__init__.py`. `pyproject.toml` la lee como
+  `dynamic`, el spec la pone en las propiedades del .exe y el flujo de Release falla si la
+  etiqueta no coincide.
+
+### GitHub Actions
+
+- **Acciones fijadas por SHA de commit** y permisos mínimos por trabajo (`contents: read`;
+  `write` solo en el trabajo de Release). Una etiqueta se puede mover y un SHA no. Dependabot
+  propone las actualizaciones de las acciones.
+- **`gh release create`** (preinstalado en el runner) en lugar de una acción de terceros para
+  crear la Release: una dependencia externa menos.
+- **El .exe se compila en el runner con el mismo `build.bat`** y las mismas dependencias por
+  hash que en local, y pasa `pip-audit`. **Descartado:** compilar en la PC del autor y subirlo a
+  mano como única vía. No deja prueba de origen y podría colar archivos locales. Sigue
+  documentado como alternativa.
+
 ## Spotify: biblioteca, búsqueda y Reproduciendo (2026-11-07)
 
 - **Elegido:** pestañas Inicio · Playlists · Me gusta · Álbumes · Buscar, más una vista

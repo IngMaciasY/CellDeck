@@ -1,0 +1,20 @@
+name: Proponer una idea
+description: Una función, un widget o una mejora
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: ¿Qué quieres poder hacer?
+      description: Describe la necesidad, no solo la solución.
+      placeholder: Quiero cambiar de micrófono desde el celular cuando hago streaming.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: ¿Cómo te imaginas que funcione?
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternativas que consideraste
