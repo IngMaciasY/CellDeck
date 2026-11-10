@@ -1,0 +1,11 @@
+# Dependabot propone PRs para actualizar las acciones de GitHub (fijadas por SHA).
+# Las dependencias de Python del ejecutable se actualizan a mano con scripts/lock_deps.py,
+# porque build.lock lleva hashes que Dependabot no regenera.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: ci

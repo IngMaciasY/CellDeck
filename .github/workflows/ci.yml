@@ -1,0 +1,70 @@
+# Integración continua: se ejecuta en cada Pull Request y en cada push a main.
+# Las acciones se fijan por SHA de commit (no por etiqueta) para que nadie pueda cambiar su
+# código sin que cambie este archivo. Dependabot propone las actualizaciones.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python:
+    name: Python (lint, tipos y tests)
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Instalar dependencias
+        run: python -m pip install --disable-pip-version-check -e ".[dev]"
+
+      - name: Ruff (lint)
+        run: ruff check src tests plugins scripts
+
+      - name: Ruff (formato)
+        run: ruff format --check src tests plugins scripts
+
+      - name: mypy
+        run: mypy
+
+      - name: pytest
+        run: python -m pytest
+
+      - name: pip-audit (dependencias del ejecutable)
+        run: pip-audit -r requirements/build.lock --require-hashes --disable-pip --progress-spinner off
+
+  web:
+    name: Frontend (compatibilidad con Chrome 60)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+
+      - name: Instalar herramientas (lockfile congelado)
+        run: bun install --frozen-lockfile
+
+      - name: bun audit
+        run: bun audit
+
+      - name: ESLint
+        run: bun run lint
