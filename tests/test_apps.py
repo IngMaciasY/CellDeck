@@ -1,4 +1,8 @@
-"""Abrir aplicaciones instaladas (Steam, Epic Games, Visual Studio, Brave) y sus iconos."""
+"""Abrir aplicaciones instaladas (Steam, Epic Games, Visual Studio, Brave) y sus iconos.
+
+La config de fábrica no trae estos botones (son ejemplos genéricos de Windows), así que los
+tests que los necesitan los añaden con ``app_buttons``.
+"""
 
 from __future__ import annotations
 
@@ -29,15 +33,39 @@ def test_catalog_has_requested_apps() -> None:
     assert APPS["visualstudio"].vswhere
 
 
-def test_default_config_has_app_buttons(registry: PluginRegistry) -> None:
+APP_BUTTONS = {
+    "steam": "steam",
+    "epic-games": "epic",
+    "visual-studio": "visualstudio",
+    "brave": "brave",
+}
+
+
+def test_default_config_is_generic(registry: PluginRegistry) -> None:
+    """La config de fábrica solo usa acciones que existen en cualquier Windows."""
     config = ConfigStore(Path("x.json"), registry).parse(default_config_data())
+    actions = [i.action for p in config.pages for i in p.items if getattr(i, "action", None)]
+    assert not [a for a in actions if a.type == "app"]
     pc = config.find_page("pc")
-    assert pc is not None
-    apps = {i.id: i for i in pc.items if getattr(i, "action", None) and i.action.type == "app"}
-    assert set(apps) == {"steam", "epic-games", "visual-studio", "brave"}
-    assert all(i.icon == "app" for i in apps.values())  # logotipo oficial
-    # Mismo formato que el resto de botones de la página (sin tamaño ni color especiales).
-    assert all(i.w == 1 and i.h == 1 and i.color is None for i in apps.values())
+    assert pc is not None and {"calculator", "settings"} <= {i.id for i in pc.items}
+
+
+@pytest.fixture
+def app_buttons(state: AppState) -> None:
+    """Añade a la página PC un botón por app del catálogo, con el logotipo oficial."""
+    data = state.config_store.config.to_json_dict()
+    pc = next(p for p in data["pages"] if p["id"] == "pc")
+    pc["items"] += [
+        {
+            "kind": "button",
+            "id": item,
+            "label": APPS[app].name,
+            "icon": "app",
+            "action": {"type": "app", "app": app},
+        }
+        for item, app in APP_BUTTONS.items()
+    ]
+    state.config_store.save(state.config_store.parse(data))
 
 
 def test_unknown_app_rejected(registry: PluginRegistry) -> None:
@@ -103,6 +131,7 @@ def test_apps_endpoint(client: TestClient, backend: FakeBackend) -> None:
     assert by_id["brave"]["fallback_icon"] == "globe"
 
 
+@pytest.mark.usefixtures("app_buttons")
 def test_icon_endpoint(client: TestClient, backend: FakeBackend) -> None:
     token = local_token(client)
     backend.apps["steam"] = STEAM
@@ -125,6 +154,7 @@ def test_icon_for_launch_and_url_buttons(client: TestClient, backend: FakeBacken
     assert client.get(f"/api/icon/pc/github?token={token}").status_code == 200
 
 
+@pytest.mark.usefixtures("app_buttons")
 def test_run_app_button(client: TestClient, backend: FakeBackend, state: AppState) -> None:
     backend.apps["visualstudio"] = AppLocation(r"C:\VS\devenv.exe", None, "vswhere")
     res = client.post(
