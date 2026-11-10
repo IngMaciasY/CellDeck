@@ -9,9 +9,9 @@ from pathlib import Path
 
 import pytest
 
-from phonedeck.config.models import Config
-from phonedeck.config.store import ConfigConflictError, ConfigStore
-from phonedeck.plugins import PluginRegistry
+from celldeck.config.models import Config
+from celldeck.config.store import ConfigConflictError, ConfigStore
+from celldeck.plugins import PluginRegistry
 
 
 def touch_later(path: Path, text: str) -> None:

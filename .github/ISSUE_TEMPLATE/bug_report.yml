@@ -10,7 +10,7 @@ body:
   - type: input
     id: version
     attributes:
-      label: Versión de PhoneDeck
+      label: Versión de CellDeck
       description: Clic derecho en el icono de la bandeja, o la Release que descargaste.
       placeholder: v0.1.0
     validations:
@@ -20,8 +20,8 @@ body:
     attributes:
       label: ¿Cómo lo ejecutas?
       options:
-        - PhoneDeck.exe (portable)
-        - PhoneDeck-win64.zip
+        - CellDeck.exe (portable)
+        - CellDeck-win64.zip
         - Desde el código (scripts\dev.bat)
     validations:
       required: true
@@ -63,5 +63,5 @@ body:
     id: logs
     attributes:
       label: Registro (opcional)
-      description: Las últimas líneas de %APPDATA%\PhoneDeck\logs\phonedeck.log. Los tokens ya salen ocultos, pero revísalo antes de pegarlo.
+      description: Las últimas líneas de %APPDATA%\CellDeck\logs\celldeck.log. Los tokens ya salen ocultos, pero revísalo antes de pegarlo.
       render: text

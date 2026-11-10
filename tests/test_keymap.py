@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from phonedeck.platform.keymap import VK_CONTROL, VK_LWIN, VK_SHIFT, parse_combo
+from celldeck.platform.keymap import VK_CONTROL, VK_LWIN, VK_SHIFT, parse_combo
 
 
 def test_parse_basic_combo() -> None:

@@ -8,11 +8,11 @@ from typing import Any
 
 import pytest
 
-from phonedeck.config.models import ButtonItem, Config
-from phonedeck.config.store import ConfigError, ConfigStore, default_config_data
-from phonedeck.plugins import PluginRegistry
-from phonedeck.plugins.keys import KeysParams
-from phonedeck.plugins.macro import MacroParams
+from celldeck.config.models import ButtonItem, Config
+from celldeck.config.store import ConfigError, ConfigStore, default_config_data
+from celldeck.plugins import PluginRegistry
+from celldeck.plugins.keys import KeysParams
+from celldeck.plugins.macro import MacroParams
 
 
 def parse(registry: PluginRegistry, data: Any) -> Config:
@@ -46,7 +46,7 @@ def test_roundtrip_preserves_action_fields(registry: PluginRegistry) -> None:
     again = parse(registry, config.to_json_dict())
     assert again.to_json_dict() == config.to_json_dict()
     steps = again.to_json_dict()["pages"][1]["items"][6]["action"]["steps"]
-    assert steps[2] == {"type": "keys", "text": "¡Hola desde PhoneDeck!"}
+    assert steps[2] == {"type": "keys", "text": "¡Hola desde CellDeck!"}
 
 
 def test_keys_combo_is_normalized(registry: PluginRegistry) -> None:

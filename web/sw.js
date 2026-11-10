@@ -1,5 +1,5 @@
 /*
- * PhoneDeck - service worker (solo se registra en http://localhost, contexto seguro).
+ * CellDeck - service worker (solo se registra en http://localhost, contexto seguro).
  *
  * - Recursos versionados (?v=hash): "caché primero". Su contenido nunca cambia, así que
  *   tras la primera visita no se piden de nuevo a la PC.
@@ -9,7 +9,7 @@
  */
 'use strict';
 
-const CACHE = 'phonedeck-v3';
+const CACHE = 'celldeck-v3';
 const SHELL = ['./'];
 
 self.addEventListener('install', function (event) {

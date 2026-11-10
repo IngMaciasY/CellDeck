@@ -1,6 +1,6 @@
 @echo off
 rem ---------------------------------------------------------------------------
-rem  PhoneDeck - compilar dist\PhoneDeck.exe
+rem  CellDeck - compilar dist\CellDeck.exe
 rem
 rem  1. Crea un entorno limpio .venv-build con Python 3.13
 rem  2. Instala dependencias EXACTAS (version + hash SHA-256) de requirements\build.lock
@@ -15,8 +15,8 @@ setlocal
 cd /d "%~dp0.."
 
 set "PY="
-rem PHONEDECK_PYTHON: ruta a python.exe 3.13 (la usa GitHub Actions, que no siempre tiene "py")
-if defined PHONEDECK_PYTHON set "PY="%PHONEDECK_PYTHON%""
+rem CELLDECK_PYTHON: ruta a python.exe 3.13 (la usa GitHub Actions, que no siempre tiene "py")
+if defined CELLDECK_PYTHON set "PY="%CELLDECK_PYTHON%""
 if not defined PY where py >nul 2>nul
 if not defined PY if not errorlevel 1 (
     py -3.13 -c "pass" >nul 2>nul
@@ -55,15 +55,15 @@ if exist ".venv\Scripts\pip-audit.exe" (
 )
 
 echo [4/4] Compilando con PyInstaller ...
-"%VPY%" -m PyInstaller --clean --noconfirm --log-level WARN phonedeck.spec
+"%VPY%" -m PyInstaller --clean --noconfirm --log-level WARN celldeck.spec
 if errorlevel 1 exit /b 1
 
-if not exist "dist\PhoneDeck.exe" (
-    echo [ERROR] No se genero dist\PhoneDeck.exe
+if not exist "dist\CellDeck.exe" (
+    echo [ERROR] No se genero dist\CellDeck.exe
     exit /b 1
 )
-certutil -hashfile "dist\PhoneDeck.exe" SHA256 | findstr /v ":" > "dist\PhoneDeck.exe.sha256"
+certutil -hashfile "dist\CellDeck.exe" SHA256 | findstr /v ":" > "dist\CellDeck.exe.sha256"
 echo.
-echo [OK] dist\PhoneDeck.exe
-type "dist\PhoneDeck.exe.sha256"
+echo [OK] dist\CellDeck.exe
+type "dist\CellDeck.exe.sha256"
 exit /b 0

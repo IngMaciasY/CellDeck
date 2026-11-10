@@ -1,4 +1,4 @@
-"""Genera el icono de PhoneDeck: ``assets/phonedeck.ico`` y los PNG de ``web/icons/``.
+"""Genera el icono de CellDeck: ``assets/celldeck.ico`` y los PNG de ``web/icons/``.
 
 Dibujado con Pillow (sin archivos de terceros). Uso:  python scripts/make_icon.py
 """
@@ -69,10 +69,10 @@ def main() -> None:
     assets.mkdir(exist_ok=True)
     big = draw_icon(256)
     big.save(
-        assets / "phonedeck.ico",
+        assets / "celldeck.ico",
         sizes=[(16, 16), (24, 24), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)],
     )
-    big.save(assets / "phonedeck.png")
+    big.save(assets / "celldeck.png")
     print("Iconos generados en web/icons/ y assets/")
 
 

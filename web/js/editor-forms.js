@@ -1,5 +1,5 @@
 /*
- * PhoneDeck - piezas del editor visual: ventanas modales, campos y formularios por
+ * CellDeck - piezas del editor visual: ventanas modales, campos y formularios por
  * tipo de acción. Los formularios modifican directamente el objeto que reciben.
  * Compatibilidad Chrome 60 (ES2017).
  */
@@ -280,7 +280,7 @@
     Object.keys(source).forEach(function (k) { target[k] = source[k]; });
   }
 
-  /** Traduce una pulsación (KeyboardEvent) al formato de PhoneDeck: "ctrl+shift+s". */
+  /** Traduce una pulsación (KeyboardEvent) al formato de CellDeck: "ctrl+shift+s". */
   const CODE_NAMES = {
     Escape: 'esc', Enter: 'enter', Tab: 'tab', Space: 'space', Backspace: 'backspace', Delete: 'delete',
     Insert: 'insert', Home: 'home', End: 'end', PageUp: 'pageup', PageDown: 'pagedown', ArrowUp: 'up',
@@ -321,7 +321,7 @@
         a.app = v;
         const app = apps.filter(function (x) { return x.id === v; })[0];
         if (app && ctx.onAppChosen) ctx.onAppChosen(app);
-      }), 'PhoneDeck la busca donde Windows la tenga instalada (registro, accesos, carpetas): ' +
+      }), 'CellDeck la busca donde Windows la tenga instalada (registro, accesos, carpetas): ' +
         'no hace falta escribir la ruta. ✓ = encontrada en esta PC.');
     },
 

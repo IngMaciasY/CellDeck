@@ -13,13 +13,13 @@ from typing import Any
 import pytest
 from fastapi.testclient import TestClient
 
-from phonedeck.apps import APPS
-from phonedeck.config.store import ConfigError, ConfigStore, default_config_data
-from phonedeck.platform.base import AppLocation
-from phonedeck.platform.fake import FakeBackend
-from phonedeck.plugins import PluginRegistry
-from phonedeck.plugins.runner import ActionRunner
-from phonedeck.state import AppState
+from celldeck.apps import APPS
+from celldeck.config.store import ConfigError, ConfigStore, default_config_data
+from celldeck.platform.base import AppLocation
+from celldeck.platform.fake import FakeBackend
+from celldeck.plugins import PluginRegistry
+from celldeck.plugins.runner import ActionRunner
+from celldeck.state import AppState
 from tests.conftest import auth, local_token
 
 PNG = b"\x89PNG\r\n\x1a\n" + b"\x00" * 16
@@ -170,7 +170,7 @@ win_only = pytest.mark.skipif(sys.platform != "win32", reason="Solo Windows")
 
 @win_only
 def test_parse_registry_paths(tmp_path: Path) -> None:
-    from phonedeck.platform.windows_apps import clean_path, exe_from_command
+    from celldeck.platform.windows_apps import clean_path, exe_from_command
 
     exe = tmp_path / "Steam" / "steam.exe"
     exe.parent.mkdir()
@@ -185,7 +185,7 @@ def test_parse_registry_paths(tmp_path: Path) -> None:
 
 @win_only
 def test_extract_real_icon_from_explorer() -> None:
-    from phonedeck.platform.windows_apps import extract_icon_png, resolve_target
+    from celldeck.platform.windows_apps import extract_icon_png, resolve_target
 
     exe = resolve_target("explorer.exe")
     assert exe is not None and exe.lower().endswith("explorer.exe")
@@ -195,7 +195,7 @@ def test_extract_real_icon_from_explorer() -> None:
 
 @win_only
 async def test_windows_backend_find_app_is_cached() -> None:
-    from phonedeck.platform.windows import WindowsBackend
+    from celldeck.platform.windows import WindowsBackend
 
     backend = WindowsBackend()
     try:

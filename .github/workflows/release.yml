@@ -1,4 +1,4 @@
-# Release: al subir una etiqueta vX.Y.Z compila PhoneDeck en Windows y crea un BORRADOR de
+# Release: al subir una etiqueta vX.Y.Z compila CellDeck en Windows y crea un BORRADOR de
 # Release con los ejecutables. El dueño lo prueba y pulsa "Publish release" (ver docs/RELEASING.md).
 name: Release
 
@@ -36,9 +36,9 @@ jobs:
         env:
           TAG: ${{ github.ref_name }}
         run: |
-          $version = (python -c "import sys; sys.path.insert(0, 'src'); import phonedeck; print(phonedeck.__version__)").Trim()
+          $version = (python -c "import sys; sys.path.insert(0, 'src'); import celldeck; print(celldeck.__version__)").Trim()
           if ("v$version" -ne $env:TAG) {
-            Write-Error "La etiqueta $env:TAG no coincide con __version__ = $version (src/phonedeck/__init__.py)"
+            Write-Error "La etiqueta $env:TAG no coincide con __version__ = $version (src/celldeck/__init__.py)"
             exit 1
           }
           if (-not (Select-String -Path CHANGELOG.md -Pattern "^## \[$([regex]::Escape($version))\]" -Quiet)) {
@@ -55,10 +55,10 @@ jobs:
       - name: Tests
         run: .venv\Scripts\python -m pytest
 
-      - name: Compilar PhoneDeck.exe (dependencias por hash + pip-audit)
+      - name: Compilar CellDeck.exe (dependencias por hash + pip-audit)
         shell: cmd
         run: |
-          for /f "delims=" %%i in ('python -c "import sys; print(sys.executable)"') do set "PHONEDECK_PYTHON=%%i"
+          for /f "delims=" %%i in ('python -c "import sys; print(sys.executable)"') do set "CELLDECK_PYTHON=%%i"
           call scripts\build.bat
 
       - name: Variante en carpeta, zip, SHA-256 y notas
@@ -69,8 +69,8 @@ jobs:
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
           subject-path: |
-            release/PhoneDeck.exe
-            release/PhoneDeck-win64.zip
+            release/CellDeck.exe
+            release/CellDeck-win64.zip
 
       - name: Crear el borrador de la Release
         shell: pwsh
@@ -79,7 +79,7 @@ jobs:
           TAG: ${{ github.ref_name }}
         run: |
           # 0.x y las etiquetas con guion (v1.0.0-rc.1) se marcan como versión preliminar.
-          $flags = @("--draft", "--verify-tag", "--title", "PhoneDeck $env:TAG", "--notes-file", "release/NOTES.md")
+          $flags = @("--draft", "--verify-tag", "--title", "CellDeck $env:TAG", "--notes-file", "release/NOTES.md")
           if ($env:TAG -match '^v0\.' -or $env:TAG -match '-') { $flags += "--prerelease" }
-          gh release create $env:TAG release/PhoneDeck.exe release/PhoneDeck-win64.zip release/SHA256SUMS.txt @flags
+          gh release create $env:TAG release/CellDeck.exe release/CellDeck-win64.zip release/SHA256SUMS.txt @flags
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

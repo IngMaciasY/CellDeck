@@ -1,6 +1,6 @@
 {
-  "name": "PhoneDeck",
-  "short_name": "PhoneDeck",
+  "name": "CellDeck",
+  "short_name": "CellDeck",
   "description": "Panel de control de tu PC",
   "start_url": "./",
   "scope": "./",

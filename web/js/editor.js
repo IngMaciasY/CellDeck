@@ -1,5 +1,5 @@
 /*
- * PhoneDeck - editor visual (celular o PC).
+ * CellDeck - editor visual (celular o PC).
  *
  * Se edita una copia (borrador) de la config. Nada se aplica en la PC hasta pulsar
  * "Guardar"; entonces se envía completa con su revisión (si otro dispositivo guardó

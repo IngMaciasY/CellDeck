@@ -1,5 +1,5 @@
 /*
- * PhoneDeck - mantener la pantalla encendida.
+ * CellDeck - mantener la pantalla encendida.
  *
  * 1) Wake Lock API si existe (Chrome 84+).
  * 2) Si no (Chrome 60 del Redmi): técnica "NoSleep", un <video> mudo en bucle.

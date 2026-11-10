@@ -1,4 +1,4 @@
-Iconos de PhoneDeck
+Iconos de CellDeck
 ===================
 
 - spotify-logo-*.svg y el icono "spotify" de web/js/icons.js: logotipos oficiales de Spotify AB,

@@ -14,10 +14,10 @@ import pytest
 from fastapi.testclient import TestClient
 from PIL import Image
 
-from phonedeck.assets import IMMUTABLE, compute_asset_version, render_html
-from phonedeck.server import create_app
-from phonedeck.services.now_playing import optimize_artwork
-from phonedeck.state import AppState
+from celldeck.assets import IMMUTABLE, compute_asset_version, render_html
+from celldeck.server import create_app
+from celldeck.services.now_playing import optimize_artwork
+from celldeck.state import AppState
 from tests.conftest import LOCAL, auth, local_token
 
 WEB = Path(__file__).resolve().parents[1] / "web"
@@ -140,7 +140,7 @@ def test_optimize_artwork_keeps_invalid_data() -> None:
 # ---------------------------------------------------------------- audio (Windows)
 @pytest.mark.skipif(sys.platform != "win32", reason="Solo Windows")
 def test_audio_endpoint_cache_and_retry(monkeypatch: pytest.MonkeyPatch) -> None:
-    from phonedeck.platform import windows
+    from celldeck.platform import windows
 
     backend = windows.WindowsBackend.__new__(windows.WindowsBackend)
     backend._endpoint_cache = None

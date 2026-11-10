@@ -1,4 +1,4 @@
-# Dependencias para compilar PhoneDeck.exe (Windows, Python 3.13).
+# Dependencias para compilar CellDeck.exe (Windows, Python 3.13).
 # Mantener sincronizado con [project.dependencies] de pyproject.toml.
 # Tras cambiar este archivo:  python scripts/lock_deps.py   (regenera build.lock con hashes)
 fastapi

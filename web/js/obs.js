@@ -1,5 +1,5 @@
 /*
- * PhoneDeck - OBS: un botón por escena. La PC hace de puente con OBS (ver src/phonedeck/obs.py).
+ * CellDeck - OBS: un botón por escena. La PC hace de puente con OBS (ver src/celldeck/obs.py).
  *
  * Los botones solo se rehacen si cambia la lista de escenas; al cambiar la escena activa
  * únicamente se mueve la clase "active". El nombre de una escena siempre va como texto.

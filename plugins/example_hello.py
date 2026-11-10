@@ -1,6 +1,6 @@
-"""Plugin externo de ejemplo para PhoneDeck.
+"""Plugin externo de ejemplo para CellDeck.
 
-Copia este archivo a ``%APPDATA%\\PhoneDeck\\plugins\\`` (o déjalo aquí en modo
+Copia este archivo a ``%APPDATA%\\CellDeck\\plugins\\`` (o déjalo aquí en modo
 desarrollo) y usa en ``config.json`` una acción así::
 
     {"type": "hello", "name": "Mundo"}
@@ -14,7 +14,7 @@ from typing import Literal
 
 from pydantic import Field
 
-from phonedeck.plugins.base import ActionParams, ActionPlugin, ActionResult, PluginContext
+from celldeck.plugins.base import ActionParams, ActionPlugin, ActionResult, PluginContext
 
 
 class HelloParams(ActionParams):
@@ -33,5 +33,5 @@ class HelloPlugin(ActionPlugin[HelloParams]):
         return ActionResult.success(f"¡Hola, {params.name}!")
 
 
-# Obligatorio: lista de instancias que PhoneDeck registrará.
+# Obligatorio: lista de instancias que CellDeck registrará.
 PLUGINS = [HelloPlugin()]

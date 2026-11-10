@@ -6,9 +6,9 @@ from typing import Any
 
 from fastapi.testclient import TestClient
 
-from phonedeck.platform.base import MediaKey
-from phonedeck.platform.fake import FakeBackend
-from phonedeck.state import AppState, Artwork
+from celldeck.platform.base import MediaKey
+from celldeck.platform.fake import FakeBackend
+from celldeck.state import AppState, Artwork
 from tests.conftest import auth, local_token
 
 WS_URL = "ws://127.0.0.1:8765/ws"

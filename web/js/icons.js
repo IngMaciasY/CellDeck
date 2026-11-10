@@ -1,5 +1,5 @@
 /*
- * PhoneDeck - iconos SVG (24x24, trazo). Locales: la app funciona sin Internet.
+ * CellDeck - iconos SVG (24x24, trazo). Locales: la app funciona sin Internet.
  * Estilo inspirado en Lucide (https://lucide.dev, licencia ISC); ver web/icons/LICENSE.txt.
  * El nombre del icono solo se usa como clave del diccionario: nunca se inyecta en el HTML.
  */

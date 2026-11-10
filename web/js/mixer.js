@@ -1,5 +1,5 @@
 /*
- * PhoneDeck - Volume Mixer: un slider y un botón de silencio por aplicación.
+ * CellDeck - Volume Mixer: un slider y un botón de silencio por aplicación.
  *
  * La lista viene de la PC (mensaje "mixer"). Las filas se reutilizan entre mensajes: solo se
  * toca el DOM de lo que cambió. Mientras se arrastra un slider se ignoran los ecos de esa fila.

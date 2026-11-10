@@ -1,4 +1,4 @@
-# PhoneDeck
+# CellDeck
 
 **Turn any phone into a control panel for your Windows PC.** It works like a Stream Deck, but
 it's free and runs on that old phone sitting in a drawer.
@@ -34,15 +34,15 @@ works on old Android phones (Chrome 60), new phones, tablets, iPhone and iPad.
 Requires Windows 10/11, 64-bit. No Python needed.
 
 1. Go to **[Releases](../../releases/latest)** and download one of these:
-   - **`PhoneDeck.exe`**: a single portable file.
-   - **`PhoneDeck-win64.zip`**: the same app as a folder. It starts faster and antivirus tools
+   - **`CellDeck.exe`**: a single portable file.
+   - **`CellDeck-win64.zip`**: the same app as a folder. It starts faster and antivirus tools
      flag it less often.
 2. Run it. An icon appears next to the Windows clock. Right-click it for the menu.
 
 **"Windows protected your PC":** the executable is not code-signed, so SmartScreen may warn you
 the first time. Click **More info** and then **Run anyway**. To check the file, compare it with
 `SHA256SUMS.txt`, or verify the build attestation:
-`gh attestation verify PhoneDeck.exe --repo IngMaciasY/PhoneDeck`.
+`gh attestation verify CellDeck.exe --repo IngMaciasY/CellDeck`.
 
 ## Connect your phone
 
@@ -55,20 +55,24 @@ the first time. Click **More info** and then **Run anyway**. To check the file, 
 
 ## Optional integrations
 
-- **OBS 28+:** enable the WebSocket server in OBS and paste its password on PhoneDeck's OBS page.
+- **OBS 28+:** enable the WebSocket server in OBS and paste its password on CellDeck's OBS page.
 - **Spotify:** requires Premium and your own free app from the
   [Spotify developer dashboard](https://developer.spotify.com/dashboard). In development mode,
   Spotify allows only 5 users per app, so there is no shared Client ID. See
   [docs/spotify.md](docs/spotify.md).
 
-Your settings and secrets live only on your PC, in `%APPDATA%\PhoneDeck`. PhoneDeck has no
+Your settings and secrets live only on your PC, in `%APPDATA%\CellDeck`. CellDeck has no
 telemetry and doesn't use external servers.
+
+**Used PhoneDeck before?** That was this project's previous name. The first time CellDeck
+runs, it copies your data from `%APPDATA%\PhoneDeck`, which stays as a backup. Your phone stays
+paired and the start-with-Windows entry moves to CellDeck.
 
 ## Development
 
 ```bat
-git clone https://github.com/IngMaciasY/PhoneDeck.git
-cd PhoneDeck
+git clone https://github.com/IngMaciasY/CellDeck.git
+cd CellDeck
 py -3.13 -m venv .venv
 .venv\Scripts\python -m pip install -e .[dev]
 scripts\dev.bat --fake --no-tray      :: demo mode, touches nothing on your system

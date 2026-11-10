@@ -6,7 +6,7 @@ import time
 
 import pytest
 
-from phonedeck.security import PairingLocked, PinGuard, TokenManager, is_loopback, strip_port
+from celldeck.security import PairingLocked, PinGuard, TokenManager, is_loopback, strip_port
 
 
 def test_token_roundtrip_and_tampering() -> None:

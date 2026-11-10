@@ -12,11 +12,11 @@ from typing import Any
 import pytest
 from fastapi.testclient import TestClient
 
-from phonedeck import adb, winui
-from phonedeck.app import LaunchOptions, PortInUseError, ServerController
-from phonedeck.platform.fake import FakeBackend
-from phonedeck.server import create_app
-from phonedeck.state import AppState
+from celldeck import adb, winui
+from celldeck.app import LaunchOptions, PortInUseError, ServerController
+from celldeck.platform.fake import FakeBackend
+from celldeck.server import create_app
+from celldeck.state import AppState
 from tests.conftest import LAN_HOST, auth, local_token, make_state
 
 
@@ -165,10 +165,10 @@ class FakeController:
 
 @pytest.fixture
 def tray(state: AppState, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Any:
-    from phonedeck.tray import TrayApp
+    from celldeck.tray import TrayApp
 
     monkeypatch.setattr(winui, "ask", lambda *a, **k: True)  # el usuario responde "Sí"
-    return TrayApp(FakeController(state), tmp_path, tmp_path / "phonedeck.log")  # type: ignore[arg-type]
+    return TrayApp(FakeController(state), tmp_path, tmp_path / "celldeck.log")  # type: ignore[arg-type]
 
 
 def test_tray_tooltip(tray: Any) -> None:

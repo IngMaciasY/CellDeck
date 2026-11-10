@@ -1,6 +1,6 @@
 /*
- * PhoneDeck - Spotify: biblioteca, búsqueda y control de la música de la PC.
- * El celular nunca habla con Spotify: la PC hace de puente (ver src/phonedeck/spotify.py).
+ * CellDeck - Spotify: biblioteca, búsqueda y control de la música de la PC.
+ * El celular nunca habla con Spotify: la PC hace de puente (ver src/celldeck/spotify.py).
  *
  * Pestañas: Inicio (recientes), Playlists, Me gusta, Álbumes y Buscar. Tocar la barra de
  * reproducción abre "Reproduciendo", con la barra para moverse dentro de la canción.
@@ -767,7 +767,7 @@
     function renderAccountHint() {
       content.appendChild(message(local
         ? 'Vincula tu cuenta para ver tu música.'
-        : 'Abre PhoneDeck en la PC (icono de la bandeja → Abrir panel) para vincular tu cuenta.'));
+        : 'Abre CellDeck en la PC (icono de la bandeja → Abrir panel) para vincular tu cuenta.'));
       if (local && !accountOpened) {
         accountOpened = true;
         account.open = true;

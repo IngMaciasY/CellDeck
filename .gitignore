@@ -19,10 +19,10 @@ dist/
 # Node / bun (solo herramientas de lint del frontend)
 node_modules/
 
-# Datos locales de PhoneDeck (nunca subir: contienen PIN y secreto)
+# Datos locales de CellDeck (nunca subir: contienen PIN y secreto)
 settings.json
 config.json
-!src/phonedeck/config/default_config.json
+!src/celldeck/config/default_config.json
 backups/
 logs/
 *.log
@@ -34,7 +34,7 @@ Thumbs.db
 desktop.ini
 .DS_Store
 
-# Variables de entorno y secretos locales (PhoneDeck no usa .env, pero por si acaso)
+# Variables de entorno y secretos locales (CellDeck no usa .env, pero por si acaso)
 .env
 .env.*
 !.env.example

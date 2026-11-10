@@ -6,18 +6,18 @@ from typing import Any
 
 import pytest
 
-from phonedeck.platform.base import MediaInfo, MediaKey, VolumeState
-from phonedeck.platform.fake import FakeBackend
-from phonedeck.services.base import Poller
-from phonedeck.services.now_playing import (
+from celldeck.platform.base import MediaInfo, MediaKey, VolumeState
+from celldeck.platform.fake import FakeBackend
+from celldeck.services.base import Poller
+from celldeck.services.now_playing import (
     NowPlayingService,
     friendly_app_name,
     media_payload,
     sniff_image_mime,
 )
-from phonedeck.services.stats import StatsService
-from phonedeck.services.volume import VolumeService
-from phonedeck.state import AppState
+from celldeck.services.stats import StatsService
+from celldeck.services.volume import VolumeService
+from celldeck.state import AppState
 
 PNG = b"\x89PNG\r\n\x1a\n" + b"\x00" * 32
 

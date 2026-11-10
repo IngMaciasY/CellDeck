@@ -14,12 +14,12 @@ import pytest
 from fastapi.testclient import TestClient
 from websockets.asyncio.server import serve
 
-from phonedeck import obs as obs_module
-from phonedeck.config.settings import Settings
-from phonedeck.obs import ObsBridge, ObsError, auth_response, scene_names
-from phonedeck.server import create_app
-from phonedeck.state import AppState
-from phonedeck.ws import WebSocketHub
+from celldeck import obs as obs_module
+from celldeck.config.settings import Settings
+from celldeck.obs import ObsBridge, ObsError, auth_response, scene_names
+from celldeck.server import create_app
+from celldeck.state import AppState
+from celldeck.ws import WebSocketHub
 from tests.conftest import LAN_HOST, auth, local_token
 from tests.fake_obs import FakeObs
 from tests.test_live import WS_URL, receive_until

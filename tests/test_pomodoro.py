@@ -8,9 +8,9 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from phonedeck.pomodoro import CYCLE_LENGTH, Durations, Phase, PomodoroTimer, Status, Transition
-from phonedeck.services.pomodoro import announce, pomodoro_service
-from phonedeck.state import AppState
+from celldeck.pomodoro import CYCLE_LENGTH, Durations, Phase, PomodoroTimer, Status, Transition
+from celldeck.services.pomodoro import announce, pomodoro_service
+from celldeck.state import AppState
 from tests.conftest import auth, local_token
 from tests.test_live import WS_URL, receive_until
 from tests.test_services import spy_broadcasts
@@ -227,7 +227,7 @@ def test_controls_and_config_from_the_phone(client: TestClient, state: AppState)
 
 def test_config_works_without_remote_edit(tmp_path: Path, state: AppState) -> None:
     """Las duraciones se editan por WiFi aunque la edición de config.json esté desactivada."""
-    from phonedeck.server import create_app
+    from celldeck.server import create_app
     from tests.conftest import LAN_HOST
 
     state.mode = "wifi"

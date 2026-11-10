@@ -1,4 +1,4 @@
-# Cómo contribuir a PhoneDeck
+# Cómo contribuir a CellDeck
 
 ¡Gracias por querer ayudar! Esta guía explica cómo preparar tu entorno, crear una rama y enviar
 un Pull Request (PR).
@@ -28,9 +28,9 @@ un Pull Request (PR).
 Si no tienes permiso de escritura en el repositorio, pulsa **Fork** en GitHub y clona tu copia:
 
 ```bat
-git clone https://github.com/<tu-usuario>/PhoneDeck.git
-cd PhoneDeck
-git remote add upstream https://github.com/IngMaciasY/PhoneDeck.git
+git clone https://github.com/<tu-usuario>/CellDeck.git
+cd CellDeck
+git remote add upstream https://github.com/IngMaciasY/CellDeck.git
 ```
 
 ### 2. Prepara el entorno
@@ -82,7 +82,7 @@ Algunas reglas del proyecto:
   `python scripts/lock_deps.py`.
 - **Los archivos `.bat` deben ser ASCII con finales CRLF**, o `cmd.exe` los rompe.
 - **Nunca subas datos personales:** ni tu `config.json` o `settings.json` (están en
-  `%APPDATA%\PhoneDeck`), ni Client IDs, tokens, contraseñas o rutas de tu PC.
+  `%APPDATA%\CellDeck`), ni Client IDs, tokens, contraseñas o rutas de tu PC.
 - **Las decisiones de diseño importantes** se anotan en [DECISIONS.md](DECISIONS.md): qué se
   eligió, qué se descartó y por qué.
 

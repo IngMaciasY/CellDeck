@@ -8,11 +8,11 @@ import sys
 import pytest
 from fastapi.testclient import TestClient
 
-from phonedeck.platform.audio import SYSTEM_KEY, SessionRow, app_key, group_sessions
-from phonedeck.platform.base import AudioApp, PlatformError
-from phonedeck.platform.fake import FakeBackend
-from phonedeck.services.mixer import MixerService, mixer_payload
-from phonedeck.state import AppState
+from celldeck.platform.audio import SYSTEM_KEY, SessionRow, app_key, group_sessions
+from celldeck.platform.base import AudioApp, PlatformError
+from celldeck.platform.fake import FakeBackend
+from celldeck.services.mixer import MixerService, mixer_payload
+from celldeck.state import AppState
 from tests.conftest import auth, local_token
 from tests.test_live import WS_URL, receive_until
 from tests.test_services import spy_broadcasts
@@ -151,7 +151,7 @@ def test_mixer_icon_only_for_live_apps(
 def test_one_dying_session_does_not_empty_the_list(monkeypatch: pytest.MonkeyPatch) -> None:
     from pycaw.pycaw import AudioUtilities
 
-    from phonedeck.platform.windows_audio import AudioMixer
+    from celldeck.platform.windows_audio import AudioMixer
 
     class Volume:
         def GetMasterVolume(self) -> float:

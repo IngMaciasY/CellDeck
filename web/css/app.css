@@ -1,5 +1,5 @@
 /*
- * PhoneDeck - estilos
+ * CellDeck - estilos
  * Compatibilidad: Chrome 60+ (Android 7/8). Evitar: gap en flexbox (Chrome 84),
  * clamp()/min()/max() (79), aspect-ratio (88), inset (87), :is()/:where() (88).
  */

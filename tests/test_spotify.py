@@ -13,13 +13,13 @@ from urllib.parse import parse_qs, urlsplit
 import pytest
 from fastapi.testclient import TestClient
 
-from phonedeck import spotify as spotify_module
-from phonedeck.config.settings import SettingsStore
-from phonedeck.logging_setup import RedactTokensFilter
-from phonedeck.platform.base import PlatformError
-from phonedeck.platform.fake import FakeBackend
-from phonedeck.server import create_app
-from phonedeck.spotify import (
+from celldeck import spotify as spotify_module
+from celldeck.config.settings import SettingsStore
+from celldeck.logging_setup import RedactTokensFilter
+from celldeck.platform.base import PlatformError
+from celldeck.platform.fake import FakeBackend
+from celldeck.server import create_app
+from celldeck.spotify import (
     SCOPES,
     SpotifyAuthError,
     SpotifyBridge,
@@ -31,8 +31,8 @@ from phonedeck.spotify import (
     pick_image,
     redirect_uri,
 )
-from phonedeck.state import AppState
-from phonedeck.ws import WebSocketHub
+from celldeck.state import AppState
+from celldeck.ws import WebSocketHub
 from tests.conftest import LAN_HOST, auth, local_token
 from tests.fake_spotify import JPEG, FakeSpotify, image, playlist, track
 from tests.test_live import WS_URL, receive_until
@@ -1093,7 +1093,7 @@ def test_offset_is_validated(client: TestClient, offset: str) -> None:
 
 
 def test_spotify_failure_does_not_log_the_phone_out(client: TestClient) -> None:
-    """Un 401 en el celular significa que PhoneDeck lo expulsó: Spotify nunca debe causarlo."""
+    """Un 401 en el celular significa que CellDeck lo expulsó: Spotify nunca debe causarlo."""
     res = client.get("/api/spotify/playlists", headers=auth(local_token(client)))
     assert res.status_code == 502
     assert res.json()["detail"] == spotify_module.NOT_LINKED_MESSAGE
@@ -1540,7 +1540,7 @@ def test_skip_count_is_validated(
 
 def test_every_spotify_command_runs_apart(client: TestClient) -> None:
     """Todas las órdenes de Spotify deben ir en segundo plano para no bloquear el volumen."""
-    from phonedeck import live
+    from celldeck import live
 
     spotify_commands = [m for t, (m, _) in live.COMMANDS.items() if t.startswith("spotify.")]
     assert spotify_commands

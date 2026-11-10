@@ -3,14 +3,14 @@ requires = ["setuptools>=75", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "phonedeck"
-dynamic = ["version"]  # se lee de src/phonedeck/__init__.py (única fuente)
+name = "celldeck"
+dynamic = ["version"]  # se lee de src/celldeck/__init__.py (única fuente)
 description = "Dashboard personalizable para controlar una PC Windows desde un celular Android antiguo."
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
 requires-python = ">=3.11"
-authors = [{ name = "PhoneDeck contributors" }]
+authors = [{ name = "CellDeck contributors" }]
 keywords = ["streamdeck", "dashboard", "android", "windows", "remote-control"]
 classifiers = [
     "Programming Language :: Python :: 3",
@@ -48,16 +48,16 @@ dev = [
 build = ["pyinstaller>=6.10"]
 
 [project.scripts]
-phonedeck = "phonedeck.__main__:main"
+celldeck = "celldeck.__main__:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
 
 [tool.setuptools.dynamic]
-version = { attr = "phonedeck.__version__" }
+version = { attr = "celldeck.__version__" }
 
 [tool.setuptools.package-data]
-phonedeck = ["config/default_config.json"]
+celldeck = ["config/default_config.json"]
 
 # ---------------------------------------------------------------- herramientas
 [tool.ruff]
@@ -80,7 +80,7 @@ ignore = [
 python_version = "3.11"
 strict = true
 mypy_path = "src"
-packages = ["phonedeck"]
+packages = ["celldeck"]
 plugins = ["pydantic.mypy"]
 
 [[tool.mypy.overrides]]

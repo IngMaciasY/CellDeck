@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "phonedeck-web-tooling",
+      "name": "celldeck-web-tooling",
       "devDependencies": {
         "@eslint/js": "10.0.1",
         "eslint": "10.14.0",

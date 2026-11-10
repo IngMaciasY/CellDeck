@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-  Ejecuta un botón de PhoneDeck desde PowerShell (útil para probar sin el celular).
+  Ejecuta un botón de CellDeck desde PowerShell (útil para probar sin el celular).
 
 .EXAMPLE
   .\scripts\try_action.ps1 -List
@@ -19,7 +19,7 @@ $ErrorActionPreference = 'Stop'
 $base = "http://127.0.0.1:$Port"
 
 $session = Invoke-RestMethod "$base/api/session"
-$headers = @{ 'X-PhoneDeck-Token' = $session.token }
+$headers = @{ 'X-CellDeck-Token' = $session.token }
 
 if ($List -or -not $Page) {
     $cfg = Invoke-RestMethod "$base/api/config" -Headers $headers

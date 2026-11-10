@@ -8,10 +8,10 @@ from typing import Any
 
 import pytest
 
-from phonedeck.config.migrations import SECTIONS_VERSION
-from phonedeck.config.store import ConfigStore
-from phonedeck.platform.fake import FakeBackend
-from phonedeck.state import AppState, build_state
+from celldeck.config.migrations import SECTIONS_VERSION
+from celldeck.config.store import ConfigStore
+from celldeck.platform.fake import FakeBackend
+from celldeck.state import AppState, build_state
 
 
 def old_config(**page: Any) -> dict[str, Any]:

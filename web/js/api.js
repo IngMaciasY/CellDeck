@@ -1,6 +1,6 @@
 /*
- * PhoneDeck - cliente HTTP de la API.
- * Todas las peticiones llevan la cabecera X-PhoneDeck-Token (protección CSRF).
+ * CellDeck - cliente HTTP de la API.
+ * Todas las peticiones llevan la cabecera X-CellDeck-Token (protección CSRF).
  */
 (function (global) {
   'use strict';
@@ -38,7 +38,7 @@
 
   async function request(method, path, body) {
     const headers = { 'Accept': 'application/json' };
-    if (token) headers['X-PhoneDeck-Token'] = token;
+    if (token) headers['X-CellDeck-Token'] = token;
     const options = { method: method, headers: headers, cache: 'no-store' };
     if (body !== undefined) {
       headers['Content-Type'] = 'application/json';

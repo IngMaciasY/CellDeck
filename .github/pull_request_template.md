@@ -9,7 +9,7 @@
 - [ ] `ruff check`, `ruff format --check`, `mypy` y `pytest` pasan en local
 - [ ] `bun run lint` pasa (compatibilidad con Chrome 60) si toqué `web/`
 - [ ] Probado en un celular real (modelo y navegador: ...) / No probado en un celular real
-- [ ] Probado con `PhoneDeck.exe` compilado (`scripts\build.bat`) / No aplica
+- [ ] Probado con `CellDeck.exe` compilado (`scripts\build.bat`) / No aplica
 
 ## Lista de control
 

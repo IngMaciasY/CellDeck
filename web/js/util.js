@@ -1,5 +1,5 @@
 /*
- * PhoneDeck - utilidades comunes.
+ * CellDeck - utilidades comunes.
  * Compatibilidad Chrome 60: ES2017 como máximo (sin ?. ni ??, sin spread de objetos,
  * sin Promise.finally ni AbortController). Lo verifica ESLint en CI.
  */
@@ -46,11 +46,32 @@
     };
   }
 
+  /**
+   * El proyecto se llamaba PhoneDeck: copia una sola vez sus claves ("phonedeck.*") a las
+   * nuevas para que el celular siga emparejado (el token sigue siendo válido, porque la PC
+   * copia también su secreto). No pisa claves que ya existan.
+   */
+  (function migrateLegacyKeys() {
+    try {
+      const ls = global.localStorage;
+      const legacy = [];
+      for (let i = 0; i < ls.length; i++) {
+        const k = ls.key(i);
+        if (k && k.indexOf('phonedeck.') === 0) legacy.push(k);
+      }
+      legacy.forEach(function (k) {
+        const name = 'celldeck.' + k.slice('phonedeck.'.length);
+        if (ls.getItem(name) === null) ls.setItem(name, ls.getItem(k));
+        ls.removeItem(k);
+      });
+    } catch (e) { /* sin almacenamiento: nada que migrar */ }
+  })();
+
   /** localStorage con tolerancia a errores (modo incógnito, cuota...). */
   const store = {
     get: function (key, fallback) {
       try {
-        const raw = global.localStorage.getItem('phonedeck.' + key);
+        const raw = global.localStorage.getItem('celldeck.' + key);
         return raw === null ? fallback : JSON.parse(raw);
       } catch (e) {
         return fallback;
@@ -58,12 +79,12 @@
     },
     set: function (key, value) {
       try {
-        global.localStorage.setItem('phonedeck.' + key, JSON.stringify(value));
+        global.localStorage.setItem('celldeck.' + key, JSON.stringify(value));
       } catch (e) { /* sin almacenamiento: se ignora */ }
     },
     remove: function (key) {
       try {
-        global.localStorage.removeItem('phonedeck.' + key);
+        global.localStorage.removeItem('celldeck.' + key);
       } catch (e) { /* idem */ }
     }
   };

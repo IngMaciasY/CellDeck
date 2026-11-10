@@ -1,5 +1,5 @@
 /*
- * PhoneDeck - renderizado de una página: grid de botones y widgets.
+ * CellDeck - renderizado de una página: grid de botones y widgets.
  */
 (function (global) {
   'use strict';

@@ -10,8 +10,8 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from phonedeck.server import create_app
-from phonedeck.state import AppState
+from celldeck.server import create_app
+from celldeck.state import AppState
 from tests.conftest import LOCAL
 
 WEB = Path(__file__).resolve().parents[1] / "web"
@@ -83,7 +83,7 @@ def test_default_config_icons_exist_in_frontend() -> None:
     icons_js = (WEB / "js" / "icons.js").read_text(encoding="utf-8")
     available = set(re.findall(r"^\s+'([a-z0-9-]+)':", icons_js, re.M))
     config_path = (
-        Path(__file__).resolve().parents[1] / "src" / "phonedeck" / "config" / "default_config.json"
+        Path(__file__).resolve().parents[1] / "src" / "celldeck" / "config" / "default_config.json"
     )
     config = json.loads(config_path.read_text(encoding="utf-8"))
     used = {p["icon"] for p in config["pages"] if "icon" in p}

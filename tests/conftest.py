@@ -9,13 +9,13 @@ from typing import Any
 import pytest
 from fastapi.testclient import TestClient
 
-from phonedeck.config.settings import Settings
-from phonedeck.platform.fake import FakeBackend
-from phonedeck.plugins import PluginRegistry, build_default_registry
-from phonedeck.plugins.base import PluginContext
-from phonedeck.plugins.runner import ActionRunner
-from phonedeck.server import create_app
-from phonedeck.state import AppState, build_state
+from celldeck.config.settings import Settings
+from celldeck.platform.fake import FakeBackend
+from celldeck.plugins import PluginRegistry, build_default_registry
+from celldeck.plugins.base import PluginContext
+from celldeck.plugins.runner import ActionRunner
+from celldeck.server import create_app
+from celldeck.state import AppState, build_state
 
 LOCAL = "http://127.0.0.1:8765"
 LAN_HOST = "192.168.1.10"
@@ -79,4 +79,4 @@ def local_token(client: TestClient) -> str:
 
 
 def auth(token: str) -> dict[str, str]:
-    return {"X-PhoneDeck-Token": token}
+    return {"X-CellDeck-Token": token}

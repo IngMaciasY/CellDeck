@@ -1,5 +1,5 @@
 /*
- * PhoneDeck - página de emparejamiento (PC). Muestra PIN, dirección y QR para el modo WiFi.
+ * CellDeck - página de emparejamiento (PC). Muestra PIN, dirección y QR para el modo WiFi.
  * Las rutas /api/pairing solo responden a la propia PC.
  */
 (function (global) {
@@ -9,7 +9,7 @@
   function show(id, visible) { $(id).classList.toggle('hidden', !visible); }
 
   async function getJson(path, token) {
-    const res = await fetch(path, { headers: token ? { 'X-PhoneDeck-Token': token } : {}, cache: 'no-store' });
+    const res = await fetch(path, { headers: token ? { 'X-CellDeck-Token': token } : {}, cache: 'no-store' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     return res.json();
   }
@@ -41,7 +41,7 @@
       $('other-urls').textContent = others.length ? 'Otras redes: ' + others.join(' · ') : '';
       // El QR se pide con la cabecera del token (una <img> no puede enviarla).
       const res = await fetch('/api/pairing/qr.png?url=' + encodeURIComponent(main),
-        { headers: { 'X-PhoneDeck-Token': token } });
+        { headers: { 'X-CellDeck-Token': token } });
       if (res.ok) $('qr').src = URL.createObjectURL(await res.blob());
     } catch (err) {
       msg.textContent = 'No se pudo cargar: ' + err.message;

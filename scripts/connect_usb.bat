@@ -1,7 +1,7 @@
 @echo off
 rem ---------------------------------------------------------------------------
-rem  PhoneDeck - conexion por cable USB con "adb reverse"
-rem  Hace que http://localhost:8765 en el celular apunte al PhoneDeck de la PC.
+rem  CellDeck - conexion por cable USB con "adb reverse"
+rem  Hace que http://localhost:8765 en el celular apunte al CellDeck de la PC.
 rem  Requisitos: "Depuracion USB" activada en el celular y adb instalado.
 rem ---------------------------------------------------------------------------
 setlocal
@@ -36,7 +36,7 @@ if errorlevel 1 (
 )
 
 echo.
-echo [OK] Tunel creado. Abriendo PhoneDeck en el celular...
+echo [OK] Tunel creado. Abriendo CellDeck en el celular...
 rem Se abre con "http://" explicito: si se escribe a mano solo "localhost:8765",
 rem los Chrome modernos pueden intentar https:// y fallar ("Invalid HTTP request").
 adb shell am start -a android.intent.action.VIEW -d "http://localhost:%PORT%/" >nul 2>nul

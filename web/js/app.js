@@ -1,5 +1,5 @@
 /*
- * PhoneDeck - aplicación principal del celular.
+ * CellDeck - aplicación principal del celular.
  *
  * Flujo: sesión (token) → config → render → WebSocket en vivo.
  * Si la sesión exige PIN (modo WiFi) se muestra el teclado de emparejamiento.
@@ -320,7 +320,7 @@
     if (state.info && state.info.loopback) {
       return '¿Sigue conectado el cable? Ejecuta connect_usb.bat (o "Conectar USB" en la bandeja).';
     }
-    return '¿Está PhoneDeck abierto en la PC y el celular en la misma red WiFi?';
+    return '¿Está CellDeck abierto en la PC y el celular en la misma red WiFi?';
   }
 
   // -------------------------------------------------------- emparejamiento
@@ -560,7 +560,7 @@
     const box = $('sheet-info');
     box.innerHTML = '';
     const lines = [
-      ['PhoneDeck', 'v' + (info.version || '?')],
+      ['CellDeck', 'v' + (info.version || '?')],
       ['Conexión', info.loopback ? 'USB / local' : 'WiFi'],
       ['Servidor', global.location.host],
       ['Edición', info.can_edit ? 'permitida' : 'desactivada (se activa en la PC)']

@@ -1,5 +1,5 @@
 /*
- * PhoneDeck - conexión WebSocket con reconexión exponencial.
+ * CellDeck - conexión WebSocket con reconexión exponencial.
  * El servidor envía {type, data}: hello, config y los temas en vivo.
  */
 (function (global) {

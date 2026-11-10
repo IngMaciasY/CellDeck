@@ -2,13 +2,31 @@
 
 Registro de lo que se eligió, lo que se descartó y por qué. Lo más reciente va primero.
 
+## Cambio de nombre: PhoneDeck → CellDeck (2026-11-09)
+
+- **Por qué:** en GitHub ya había 17 repositorios llamados PhoneDeck. "CellDeck" solo aparecía en
+  1 sin relación y estaba libre en PyPI. **Descartados:** TapDeck, PocketDeck y Botonera (muy
+  usados), y CelDeck, MandoPC, CtrlCel y PanelCel (libres, pero el dueño eligió CellDeck).
+- **Elegido: cambio completo** (paquete `celldeck`, `CellDeck.exe`, `%APPDATA%\CellDeck`,
+  variables `CELLDECK_*`, cabecera `X-CellDeck-Token`). **Descartado:** cambiar solo lo visible.
+  Dejaría `phonedeck` por dentro y confundiría a quien contribuya.
+- **Migración de quien ya lo usaba:**
+  - La carpeta de datos se **copia**, no se mueve, la primera vez y solo si la nueva no existe.
+    Así la antigua queda de respaldo y nunca se pisan datos.
+  - La entrada "PhoneDeck" de la clave Run se sustituye por la de CellDeck, para que no se
+    abran los dos.
+  - En el celular, las claves `phonedeck.*` de `localStorage` pasan a `celldeck.*`. Como el
+    secreto también se copia, el token sigue valiendo y no hay que volver a emparejar.
+- **El historial conserva "PhoneDeck"** en los commits anteriores al cambio. Es el nombre que
+  tenía entonces, así que no se reescribe.
+
 ## Repositorio público y Releases (2026-11-09)
 
 ### Datos personales
 
 - **Comprobado:** el código y los 44 commits no contienen credenciales. El Client ID y el token
   de Spotify, la contraseña de OBS, el PIN y el secreto viven en
-  `%APPDATA%\PhoneDeck\settings.json`, fuera del repositorio.
+  `%APPDATA%\CellDeck\settings.json`, fuera del repositorio.
 - **Elegido:** quitar de la config de fábrica los botones de las apps del autor (Steam, Epic,
   Visual Studio, Brave) y poner acciones que existen en cualquier Windows (Calculadora y
   Configuración). El catálogo de apps sigue en el código y se ofrece desde el editor.
@@ -19,7 +37,7 @@ Registro de lo que se eligió, lo que se descartó y por qué. Lo más reciente 
   funciones generales.
 - **Descartado:** un Client ID de Spotify dentro del .exe público. El modo de desarrollo admite
   5 usuarios por app y obligaría al autor a aprobar a cada uno.
-- **Descartado:** `.env.example`. PhoneDeck no lee secretos de variables de entorno; cada
+- **Descartado:** `.env.example`. CellDeck no lee secretos de variables de entorno; cada
   instalación genera los suyos. En su lugar, [docs/configuracion.md](docs/configuracion.md)
   documenta `settings.json`.
 - **Historial:** se reescribe el autor de todos los commits con `git filter-repo`, conservando
@@ -35,19 +53,19 @@ Registro de lo que se eligió, lo que se descartó y por qué. Lo más reciente 
 
 ### Ejecutables
 
-- **Elegido:** publicar `PhoneDeck.exe` (un solo archivo) y `PhoneDeck-win64.zip` (carpeta). El
+- **Elegido:** publicar `CellDeck.exe` (un solo archivo) y `CellDeck-win64.zip` (carpeta). El
   primero es lo más fácil de usar; el segundo arranca más rápido y dispara menos falsos
   positivos del antivirus. **Descartado por ahora:** un instalador con Inno Setup. Añade otra
   herramienta a la compilación y la app no necesita registrarse en el sistema.
-- **Nombres fijos** (`PhoneDeck.exe`, sin la versión): así
-  `releases/latest/download/PhoneDeck.exe` siempre funciona. La versión está en el título de la
+- **Nombres fijos** (`CellDeck.exe`, sin la versión): así
+  `releases/latest/download/CellDeck.exe` siempre funciona. La versión está en el título de la
   Release y en las propiedades del .exe.
 - **Sin firma de código:** cuesta dinero o requiere verificar una identidad. Se compensa con el
   SHA-256 y una atestación de compilación de GitHub (Sigstore), y el README explica el aviso de
   SmartScreen.
 - **La Release se crea como borrador:** el dueño prueba el .exe en una PC real antes de
   publicarlo. Las versiones `0.x` y las que llevan guion se marcan como preliminares.
-- **Versión en un solo sitio:** `src/phonedeck/__init__.py`. `pyproject.toml` la lee como
+- **Versión en un solo sitio:** `src/celldeck/__init__.py`. `pyproject.toml` la lee como
   `dynamic`, el spec la pone en las propiedades del .exe y el flujo de Release falla si la
   etiqueta no coincide.
 
@@ -96,7 +114,7 @@ Registro de lo que se eligió, lo que se descartó y por qué. Lo más reciente 
 - **Descartado:** Spotify Embed. Tiene el aspecto de Spotify, carga una playlist por iframe y
   obliga a abrir la CSP. Sonaría en el celular, y por WiFi (HTTP) probablemente solo clips de
   menos de 30 s, porque el audio cifrado pide un contexto seguro. Esto último no se probó.
-- **Descartado:** Web Playback SDK. Convertiría el celular en reproductor, y PhoneDeck controla
+- **Descartado:** Web Playback SDK. Convertiría el celular en reproductor, y CellDeck controla
   la PC.
 
 ### Autenticación
@@ -108,7 +126,7 @@ Registro de lo que se eligió, lo que se descartó y por qué. Lo más reciente 
 - **Descartado:** un Client ID común en el repositorio. Dejaría de servir con la sexta persona y
   obligaría a autorizar a cada usuario a mano.
 - **Solo PC o USB:** Spotify solo admite `http` en la dirección de retorno si es `127.0.0.1`.
-  **Descartado:** servir PhoneDeck por HTTPS, que exigiría certificados en cada celular.
+  **Descartado:** servir CellDeck por HTTPS, que exigiría certificados en cada celular.
 - **Tokens:** el de acceso vive en memoria; el de renovación, en `settings.json` sin cifrar, igual
   que la contraseña de OBS y por la misma razón.
 - **Renovación con cerrojo:** con PKCE el token puede rotar y el anterior deja de valer. Dos
@@ -116,7 +134,7 @@ Registro de lo que se eligió, lo que se descartó y por qué. Lo más reciente 
 - **Sesión rechazada:** si Spotify responde `invalid_grant` se borra el token y se pide volver a
   vincular. Los fallos de red no lo borran.
 - **`state` de un solo uso:** impide que otra web vincule en esta PC una cuenta ajena. La ruta de
-  retorno no lleva token de PhoneDeck porque quien llega es el navegador, desde Spotify.
+  retorno no lleva token de CellDeck porque quien llega es el navegador, desde Spotify.
 - **Registro:** el filtro de los logs oculta también `code` y `state` del retorno.
 
 ### Permisos y privacidad
@@ -201,7 +219,7 @@ Registro de lo que se eligió, lo que se descartó y por qué. Lo más reciente 
   mezclador y de OBS sin que nadie los active. Se quitan borrando esas páginas.
 - **Volumen general:** la migración no lo añade si el usuario ya lo había quitado, porque quitar
   un widget retira ese control al celular.
-- **Si la escritura falla:** PhoneDeck arranca igual y reintenta en el siguiente inicio.
+- **Si la escritura falla:** CellDeck arranca igual y reintenta en el siguiente inicio.
 
 ### Volume Mixer
 
@@ -237,7 +255,7 @@ Registro de lo que se eligió, lo que se descartó y por qué. Lo más reciente 
 - **Elegido:** la PC hace de puente hacia OBS. La contraseña se queda en `settings.json`, OBS no
   se expone a la red y funciona igual por USB y por WiFi.
 - **Descartado:** conexión directa desde el celular. `crypto.subtle` no existe en HTTP, `adb
-  reverse` solo reenvía el puerto de PhoneDeck y la contraseña acabaría en el teléfono.
+  reverse` solo reenvía el puerto de CellDeck y la contraseña acabaría en el teléfono.
 - **Contraseña:** se cambia en un formulario solo disponible por `loopback` (la PC o el celular
   por USB). Es de solo escritura: el servidor nunca la devuelve.
 - **Comandos:** el puente solo acepta cambiar a una escena de la lista actual; no reenvía

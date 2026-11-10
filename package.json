@@ -1,5 +1,5 @@
 {
-  "name": "phonedeck-web-tooling",
+  "name": "celldeck-web-tooling",
   "private": true,
   "description": "Solo herramientas de lint del frontend (web/). El frontend no usa dependencias en ejecución.",
   "license": "MIT",

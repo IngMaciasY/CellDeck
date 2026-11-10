@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
-from phonedeck.logging_setup import setup_logging
+from celldeck.logging_setup import setup_logging
 
 
 def test_tokens_are_redacted(tmp_path: Path) -> None:
@@ -16,13 +16,13 @@ def test_tokens_are_redacted(tmp_path: Path) -> None:
         # Igual que el mensaje real de uvicorn (con argumentos %s)
         logger.info('%s - "WebSocket %s" [accepted]', "127.0.0.1:5000", f"/ws?token={token}")
         logger.info("GET /api/media/artwork?h=abc&token=%s", token)
-        logger.info("cabecera x-phonedeck-token: %s", token)
+        logger.info("cabecera x-celldeck-token: %s", token)
         for handler in logging.getLogger().handlers:
             handler.flush()
         text = log_file.read_text(encoding="utf-8")
         assert token not in text
         assert text.count("token=***") == 2
-        assert "x-phonedeck-token: ***" in text
+        assert "x-celldeck-token: ***" in text
         assert "h=abc" in text  # el resto del mensaje se conserva
     finally:
         for handler in list(logging.getLogger().handlers):

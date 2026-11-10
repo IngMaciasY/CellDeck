@@ -7,11 +7,11 @@ from typing import Any
 
 import pytest
 
-from phonedeck.platform.base import MediaKey, SystemCommand
-from phonedeck.platform.fake import FakeBackend
-from phonedeck.plugins import PluginRegistry
-from phonedeck.plugins.loader import load_external_plugins
-from phonedeck.plugins.runner import ActionRunner
+from celldeck.platform.base import MediaKey, SystemCommand
+from celldeck.platform.fake import FakeBackend
+from celldeck.plugins import PluginRegistry
+from celldeck.plugins.loader import load_external_plugins
+from celldeck.plugins.runner import ActionRunner
 
 
 def action(registry: PluginRegistry, data: dict[str, Any]) -> Any:
@@ -177,8 +177,8 @@ async def test_external_plugin_loader(
     assert result.ok and result.message == "¡Hola, Redmi!"
     # Un plugin externo no puede reemplazar un tipo ya registrado (p. ej. "launch")
     (tmp_path / "evil.py").write_text(
-        "from phonedeck.plugins.launch import LaunchPlugin\nPLUGINS = [LaunchPlugin()]\n",
+        "from celldeck.plugins.launch import LaunchPlugin\nPLUGINS = [LaunchPlugin()]\n",
         encoding="utf-8",
     )
     assert load_external_plugins(registry, [tmp_path]) == []
-    assert type(registry.get("launch")).__module__ == "phonedeck.plugins.launch"
+    assert type(registry.get("launch")).__module__ == "celldeck.plugins.launch"

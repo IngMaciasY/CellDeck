@@ -1,6 +1,6 @@
 # Registro de cambios
 
-Todos los cambios visibles de PhoneDeck se anotan aquí. El formato sigue
+Todos los cambios visibles de CellDeck se anotan aquí. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y las versiones siguen
 [Versionado Semántico](https://semver.org/lang/es/): `MAYOR.MENOR.PARCHE`.
 
@@ -8,7 +8,9 @@ Todos los cambios visibles de PhoneDeck se anotan aquí. El formato sigue
 
 ## [0.1.0] - 2026-11-09
 
-Primera versión pública.
+Primera versión pública. Durante el desarrollo el proyecto se llamó **PhoneDeck**: al abrir
+CellDeck por primera vez se copian los datos de `%APPDATA%\PhoneDeck`, el celular sigue
+emparejado y el inicio con Windows pasa a CellDeck.
 
 ### Añadido
 
@@ -24,9 +26,9 @@ Primera versión pública.
 - Volume Mixer por aplicación, temporizador Pomodoro y cambio de escena en OBS (opcional).
 - Integración opcional con Spotify. Cada usuario usa su propio Client ID.
 - Editor visual desde el celular o la PC: botones, widgets, páginas, iconos, colores y macros.
-- `PhoneDeck.exe` con icono en la bandeja: QR y PIN, conexión USB, modo WiFi, desconectar
+- `CellDeck.exe` con icono en la bandeja: QR y PIN, conexión USB, modo WiFi, desconectar
   dispositivos e iniciar con Windows.
-- Releases automáticas en GitHub: `PhoneDeck.exe`, `PhoneDeck-win64.zip`, SHA-256 y atestación
+- Releases automáticas en GitHub: `CellDeck.exe`, `CellDeck-win64.zip`, SHA-256 y atestación
   de compilación.
 
 [Sin publicar]: ../../compare/v0.1.0...HEAD

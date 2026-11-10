@@ -1,5 +1,5 @@
 /*
- * PhoneDeck - Pomodoro. El temporizador vive en la PC; aquí solo se muestra.
+ * CellDeck - Pomodoro. El temporizador vive en la PC; aquí solo se muestra.
  *
  * La pantalla se repinta una vez por segundo, justo en el cambio de segundo, y solo si el
  * periodo está en marcha y la página es visible. Sin requestAnimationFrame ni bucles.

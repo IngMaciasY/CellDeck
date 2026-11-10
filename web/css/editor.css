@@ -1,5 +1,5 @@
 /*
- * PhoneDeck - estilos del editor visual. Se cargan solo al entrar en modo edición
+ * CellDeck - estilos del editor visual. Se cargan solo al entrar en modo edición
  * (lazy loading) junto con js/editor-forms.js y js/editor.js.
  */
 .edit-bar {

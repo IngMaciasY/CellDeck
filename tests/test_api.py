@@ -9,9 +9,9 @@ import pytest
 from fastapi.testclient import TestClient
 from starlette.websockets import WebSocketDisconnect
 
-from phonedeck.platform.fake import FakeBackend
-from phonedeck.server import create_app
-from phonedeck.state import AppState
+from celldeck.platform.fake import FakeBackend
+from celldeck.server import create_app
+from celldeck.state import AppState
 from tests.conftest import LAN_HOST, auth, local_token, make_state
 
 # El TestClient usa Host 'testserver' en WebSocket salvo que se pase la URL completa.

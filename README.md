@@ -1,4 +1,4 @@
-# PhoneDeck
+# CellDeck
 
 **Convierte cualquier celular en un panel de control para tu PC con Windows.** Funciona como un
 Stream Deck, pero gratis y usando un teléfono viejo que tengas en un cajón.
@@ -7,7 +7,7 @@ En el celular **no se instala nada**: abre una página web que sirve tu PC, por 
 WiFi. Funciona desde Android antiguos (Chrome 60) hasta celulares nuevos, tablets, iPhone y iPad.
 
 [![CI](../../actions/workflows/ci.yml/badge.svg)](../../actions/workflows/ci.yml)
-[![Última versión](https://img.shields.io/github/v/release/IngMaciasY/PhoneDeck?include_prereleases&label=versi%C3%B3n)](../../releases/latest)
+[![Última versión](https://img.shields.io/github/v/release/IngMaciasY/CellDeck?include_prereleases&label=versi%C3%B3n)](../../releases/latest)
 [![Licencia MIT](https://img.shields.io/badge/licencia-MIT-blue)](LICENSE)
 
 [English version](README.en.md)
@@ -55,9 +55,9 @@ WiFi. Funciona desde Android antiguos (Chrome 60) hasta celulares nuevos, tablet
 **Requisitos:** Windows 10 u 11 de 64 bits. No hace falta Python ni nada más.
 
 1. Entra a **[Releases](../../releases/latest)** y descarga una de estas dos opciones:
-   - **`PhoneDeck.exe`**: un solo archivo. Lo pones donde quieras y lo abres.
-   - **`PhoneDeck-win64.zip`**: la misma app en una carpeta. Arranca más rápido y los antivirus
-     la marcan menos. Descomprímela y abre `PhoneDeck\PhoneDeck.exe`.
+   - **`CellDeck.exe`**: un solo archivo. Lo pones donde quieras y lo abres.
+   - **`CellDeck-win64.zip`**: la misma app en una carpeta. Arranca más rápido y los antivirus
+     la marcan menos. Descomprímela y abre `CellDeck\CellDeck.exe`.
 2. Ábrelo. Aparecerá un icono junto al reloj de Windows. Clic derecho en él para ver el menú.
 
 ### "Windows protegió tu PC"
@@ -72,22 +72,22 @@ Si quieres comprobar que el archivo es el original, compara su huella con la de
 `SHA256SUMS.txt` de la Release. En PowerShell:
 
 ```powershell
-Get-FileHash .\PhoneDeck.exe -Algorithm SHA256
+Get-FileHash .\CellDeck.exe -Algorithm SHA256
 ```
 
 Cada Release también lleva una **atestación de GitHub** que demuestra que el .exe se compiló a
 partir de este código público:
 
 ```
-gh attestation verify PhoneDeck.exe --repo IngMaciasY/PhoneDeck
+gh attestation verify CellDeck.exe --repo IngMaciasY/CellDeck
 ```
 
 ### Actualizar o desinstalar
 
-- **Actualizar:** cierra PhoneDeck (icono de la bandeja → **Salir**) y reemplaza el .exe por el
+- **Actualizar:** cierra CellDeck (icono de la bandeja → **Salir**) y reemplaza el .exe por el
   nuevo. Tu configuración se conserva.
 - **Desinstalar:** desactiva **Iniciar con Windows**, sal y borra el .exe. Si además quieres
-  borrar tu configuración, elimina la carpeta `%APPDATA%\PhoneDeck`.
+  borrar tu configuración, elimina la carpeta `%APPDATA%\CellDeck`.
 
 ---
 
@@ -123,7 +123,7 @@ Usa el modo WiFi solo en redes de confianza (tu casa), no en redes públicas.
 
 - **Pantalla completa:** ⚙️ → **Pantalla completa**, o en Chrome ⋮ → **Añadir a pantalla de
   inicio** para abrirlo como una app.
-- **La pantalla no se apaga** mientras PhoneDeck está abierto.
+- **La pantalla no se apaga** mientras CellDeck está abierto.
 - **Desliza a izquierda o derecha** para cambiar de página.
 
 <br clear="right">
@@ -155,7 +155,7 @@ Acciones disponibles para un botón:
 | Macro | Varias acciones con esperas entre medias |
 | Sistema | Bloquear, apagar la pantalla, suspender |
 
-La configuración se guarda solo en tu PC, en `%APPDATA%\PhoneDeck`. Opciones avanzadas:
+La configuración se guarda solo en tu PC, en `%APPDATA%\CellDeck`. Opciones avanzadas:
 [docs/configuracion.md](docs/configuracion.md).
 
 <br clear="right">
@@ -170,10 +170,10 @@ Vienen desactivadas. No se conectan a nada hasta que tú las configuras.
 
 1. En OBS: **Herramientas → Ajustes del servidor WebSocket** → activa el servidor y copia la
    contraseña.
-2. En PhoneDeck, abre la página **OBS** desde la PC o por USB → **Configurar conexión** → pega
+2. En CellDeck, abre la página **OBS** desde la PC o por USB → **Configurar conexión** → pega
    la contraseña. Por seguridad, este formulario no aparece por WiFi.
 
-PhoneDeck se conecta a OBS desde la propia PC, así que OBS no necesita abrirse a la red.
+CellDeck se conecta a OBS desde la propia PC, así que OBS no necesita abrirse a la red.
 
 ### Spotify
 
@@ -185,7 +185,7 @@ Necesitas:
 - Una cuenta **Spotify Premium** (Spotify la exige para controlar la reproducción).
 - Crear una app gratuita en el
   [panel de desarrolladores de Spotify](https://developer.spotify.com/dashboard) y pegar su
-  **Client ID** en PhoneDeck.
+  **Client ID** en CellDeck.
 
 **¿Por qué cada uno crea su propia app?** Spotify limita a 5 usuarios cada app en modo de
 desarrollo, así que un Client ID común dejaría de funcionar enseguida. El tuyo se guarda solo en
@@ -224,8 +224,8 @@ Requisitos: Windows 10/11, [Python 3.13](https://www.python.org/downloads/),
 [Git](https://git-scm.com/) y, solo para el lint del frontend, [bun](https://bun.sh).
 
 ```bat
-git clone https://github.com/IngMaciasY/PhoneDeck.git
-cd PhoneDeck
+git clone https://github.com/IngMaciasY/CellDeck.git
+cd CellDeck
 py -3.13 -m venv .venv
 .venv\Scripts\python -m pip install -e .[dev]
 ```
@@ -252,7 +252,7 @@ bun install --frozen-lockfile && bun run lint   :: compatibilidad con Chrome 60
 ### Compilar el ejecutable
 
 ```bat
-scripts\build.bat                                                   :: dist\PhoneDeck.exe
+scripts\build.bat                                                   :: dist\CellDeck.exe
 powershell -ExecutionPolicy Bypass -File scripts\package_release.ps1 :: release\ (exe, zip, SHA-256)
 ```
 
@@ -262,7 +262,7 @@ auditan con `pip-audit`. Cómo publicar una versión: [docs/RELEASING.md](docs/R
 ### Estructura
 
 ```
-src/phonedeck/      servidor: API, WebSocket, seguridad, bandeja
+src/celldeck/      servidor: API, WebSocket, seguridad, bandeja
   platform/         capa de Windows (audio, teclado, apps) y backend simulado
   plugins/          acciones de los botones (media, volume, launch, keys, macro…)
   services/         datos en vivo (canción actual, CPU/RAM, mixer, Pomodoro)
@@ -295,10 +295,14 @@ navegador.
 **El celular dice "Invalid HTTP request" o no carga.** Escribe la dirección con `http://`
 delante. Sin eso, Chrome intenta `https` y falla.
 
-**El antivirus borró PhoneDeck.exe.** Es un falso positivo frecuente con programas hechos con
+**El antivirus borró CellDeck.exe.** Es un falso positivo frecuente con programas hechos con
 PyInstaller. Prueba la versión `.zip`, comprueba el SHA-256 o compílalo tú mismo desde el código.
 
-**¿Dónde están mis botones?** En `%APPDATA%\PhoneDeck\config.json`. Se hace una copia en
+**Usaba PhoneDeck. ¿Pierdo algo?** No. Es el nombre anterior del proyecto. La primera vez que
+abres CellDeck se copian tus botones, el PIN, los celulares emparejados y la cuenta de Spotify
+desde `%APPDATA%\PhoneDeck`, que queda como respaldo, y el inicio con Windows pasa a CellDeck.
+
+**¿Dónde están mis botones?** En `%APPDATA%\CellDeck\config.json`. Se hace una copia en
 `backups\` cada vez que guardas.
 
 ---

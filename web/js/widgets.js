@@ -1,5 +1,5 @@
 /*
- * PhoneDeck - widgets: reloj, CPU/RAM, ahora suena y volumen.
+ * CellDeck - widgets: reloj, CPU/RAM, ahora suena y volumen.
  * Mezclador, Pomodoro, OBS y Spotify viven en su propio archivo y se añaden con register().
  *
  * Cada widget: { el, update(type, data), destroy() }.
