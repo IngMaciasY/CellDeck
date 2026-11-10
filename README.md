@@ -1,4 +1,10 @@
-# CellDeck
+<p align="center">
+  <img src="assets/celldeck.png" alt="Icono de CellDeck" width="128" height="128">
+</p>
+
+<h1 align="center">CellDeck</h1>
+
+<p align="center"><i>Tu celular viejo, convertido en un Stream Deck para Windows</i></p>
 
 **Convierte cualquier celular en un panel de control para tu PC con Windows.** Funciona como un
 Stream Deck, pero gratis y usando un teléfono viejo que tengas en un cajón.
