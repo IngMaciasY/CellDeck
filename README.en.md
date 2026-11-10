@@ -8,12 +8,17 @@ works on old Android phones (Chrome 60), new phones, tablets, iPhone and iPad.
 
 > The app's interface and most of the docs are in Spanish. [Versión en español](README.md)
 
-<p align="center">
-  <img src="docs/img/media.png" alt="Media page" width="200">
-  <img src="docs/img/pc.png" alt="PC page" width="200">
-  <img src="docs/img/mixer.png" alt="Volume mixer" width="200">
-  <img src="docs/img/obs.png" alt="OBS scenes" width="200">
-</p>
+<table>
+  <tr><th width="50%">🎵 Media</th><th width="50%">🖥️ PC</th></tr>
+  <tr><td><img src="docs/img/media.png" alt="Media page" width="100%"></td><td><img src="docs/img/pc.png" alt="PC page" width="100%"></td></tr>
+  <tr><td align="center"><sub>Current song with cover art, controls and volume</sub></td><td align="center"><sub>Clock, live CPU/RAM and Windows actions</sub></td></tr>
+  <tr><th width="50%">🔊 Volume Mixer</th><th width="50%">🎬 OBS</th></tr>
+  <tr><td><img src="docs/img/mixer.png" alt="Volume mixer" width="100%"></td><td><img src="docs/img/obs.png" alt="OBS scenes" width="100%"></td></tr>
+  <tr><td align="center"><sub>Per-app volume and mute</sub></td><td align="center"><sub>One button per scene, the active one highlighted</sub></td></tr>
+  <tr><th width="50%">✏️ Edit mode</th><th width="50%">🟢 Spotify</th></tr>
+  <tr><td><img src="docs/img/editor.png" alt="Edit mode" width="100%"></td><td><img src="docs/img/spotify.png" alt="Spotify setup" width="100%"></td></tr>
+  <tr><td align="center"><sub>Drag to move, tap to change label, icon, color and action</sub></td><td align="center"><sub>Link with your own Client ID, then browse playlists, search and queue</sub></td></tr>
+</table>
 
 ## Features
 
