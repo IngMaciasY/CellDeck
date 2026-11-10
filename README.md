@@ -12,12 +12,14 @@ WiFi. Funciona desde Android antiguos (Chrome 60) hasta celulares nuevos, tablet
 
 [English version](README.en.md)
 
-<p align="center">
-  <img src="docs/img/media.png" alt="Página Multimedia: canción actual con portada, controles y volumen" width="200">
-  <img src="docs/img/pc.png" alt="Página PC: reloj, CPU y RAM, y botones de acciones" width="200">
-  <img src="docs/img/mixer.png" alt="Volume Mixer: volumen por aplicación" width="200">
-  <img src="docs/img/obs.png" alt="Escenas de OBS como botones" width="200">
-</p>
+<table>
+  <tr><th width="50%">🎵 Multimedia</th><th width="50%">🖥️ PC</th></tr>
+  <tr><td><img src="docs/img/media.png" alt="Página Multimedia: canción actual con portada, controles y volumen" width="100%"></td><td><img src="docs/img/pc.png" alt="Página PC: reloj, CPU y RAM, y botones de acciones" width="100%"></td></tr>
+  <tr><td align="center"><sub>Canción actual con portada, controles y volumen</sub></td><td align="center"><sub>Reloj, CPU/RAM en vivo y acciones de Windows</sub></td></tr>
+  <tr><th width="50%">🔊 Volume Mixer</th><th width="50%">🎬 OBS</th></tr>
+  <tr><td><img src="docs/img/mixer.png" alt="Volume Mixer: volumen por aplicación" width="100%"></td><td><img src="docs/img/obs.png" alt="Escenas de OBS como botones" width="100%"></td></tr>
+  <tr><td align="center"><sub>Volumen y silencio por aplicación</sub></td><td align="center"><sub>Un botón por escena, con la activa resaltada</sub></td></tr>
+</table>
 
 ---
 
@@ -93,9 +95,13 @@ gh attestation verify CellDeck.exe --repo IngMaciasY/CellDeck
 
 ## Usarlo desde el celular
 
-<img src="docs/img/pair.png" alt="Página de conexión en la PC" width="200" align="right">
-
 Hay dos formas. **Por cable es la más segura**: nadie más de la red puede conectarse.
+
+<table>
+  <tr><th>📱 Conectar un celular</th></tr>
+  <tr><td><img src="docs/img/pair.png" alt="Página de conexión en la PC" width="100%"></td></tr>
+  <tr><td align="center"><sub>Página de la PC con los pasos para USB y WiFi (QR y PIN en modo WiFi)</sub></td></tr>
+</table>
 
 ### Opción 1: por cable USB (Android)
 
@@ -126,13 +132,15 @@ Usa el modo WiFi solo en redes de confianza (tu casa), no en redes públicas.
 - **La pantalla no se apaga** mientras CellDeck está abierto.
 - **Desliza a izquierda o derecha** para cambiar de página.
 
-<br clear="right">
-
 ---
 
 ## Personalizar
 
-<img src="docs/img/editor.png" alt="Modo edición: cada botón se puede mover, editar o borrar" width="200" align="right">
+<table>
+  <tr><th>✏️ Modo edición</th></tr>
+  <tr><td><img src="docs/img/editor.png" alt="Modo edición: cada botón se puede mover, editar o borrar" width="100%"></td></tr>
+  <tr><td align="center"><sub>Arrastra para mover, toca para editar texto, icono, color y acción</sub></td></tr>
+</table>
 
 Toca ⚙️ → **Editar** (en la PC, o en el celular conectado por USB):
 
@@ -158,8 +166,6 @@ Acciones disponibles para un botón:
 La configuración se guarda solo en tu PC, en `%APPDATA%\CellDeck`. Opciones avanzadas:
 [docs/configuracion.md](docs/configuracion.md).
 
-<br clear="right">
-
 ---
 
 ## Integraciones opcionales
@@ -177,7 +183,11 @@ CellDeck se conecta a OBS desde la propia PC, así que OBS no necesita abrirse a
 
 ### Spotify
 
-<img src="docs/img/spotify.png" alt="Pantalla para vincular Spotify con tu propio Client ID" width="200" align="right">
+<table>
+  <tr><th>🟢 Spotify</th></tr>
+  <tr><td><img src="docs/img/spotify.png" alt="Pantalla para vincular Spotify con tu propio Client ID" width="100%"></td></tr>
+  <tr><td align="center"><sub>Vinculación con tu propio Client ID; después muestra playlists, búsqueda y cola</sub></td></tr>
+</table>
 
 Muestra tus playlists, tus canciones guardadas y la búsqueda, y controla lo que suena en la PC.
 Necesitas:
@@ -195,8 +205,6 @@ Guía paso a paso: [docs/spotify.md](docs/spotify.md).
 
 *Spotify es una marca de Spotify AB. Este proyecto no está afiliado a Spotify y su logotipo no
 forma parte de la licencia MIT.*
-
-<br clear="right">
 
 ---
 
