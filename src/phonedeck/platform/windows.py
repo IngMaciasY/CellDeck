@@ -184,7 +184,8 @@ def _com_thread_init() -> None:
     para que su CoInitialize implícito ocurra en este hilo y no en el del event loop."""
     import comtypes
 
-    comtypes.CoInitializeEx(comtypes.COINIT_APARTMENTTHREADED)
+    # comtypes >= 1.5 trae tipos pero esta función no está anotada; 1.4 (build.lock) no los trae.
+    comtypes.CoInitializeEx(comtypes.COINIT_APARTMENTTHREADED)  # type: ignore[no-untyped-call,unused-ignore]
 
 
 class WindowsBackend:
