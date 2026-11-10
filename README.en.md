@@ -1,4 +1,10 @@
-# CellDeck
+<p align="center">
+  <img src="assets/celldeck.png" alt="CellDeck icon" width="128" height="128">
+</p>
+
+<h1 align="center">CellDeck</h1>
+
+<p align="center"><i>Your old phone, turned into a Stream Deck for Windows</i></p>
 
 **Turn any phone into a control panel for your Windows PC.** It works like a Stream Deck, but
 it's free and runs on that old phone sitting in a drawer.
