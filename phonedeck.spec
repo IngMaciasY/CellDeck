@@ -72,16 +72,18 @@ a = Analysis(  # noqa: F821
 )
 pyz = PYZ(a.pure)  # noqa: F821
 
-exe = EXE(  # noqa: F821
-    pyz,
-    a.scripts,
-    a.binaries,
-    a.datas,
-    [],
-    name="PhoneDeck",
-    icon=str(ROOT / "assets" / "phonedeck.ico"),
-    version=version_info,
-    console=False,  # app de bandeja: sin ventana negra
-    upx=False,  # UPX provoca falsos positivos en antivirus
-    disable_windowed_traceback=False,
-)
+ONEDIR = os.environ.get("PHONEDECK_ONEDIR") == "1"
+exe_options = {
+    "name": "PhoneDeck",
+    "icon": str(ROOT / "assets" / "phonedeck.ico"),
+    "version": version_info,
+    "console": False,  # app de bandeja: sin ventana negra
+    "upx": False,  # UPX provoca falsos positivos en antivirus
+    "disable_windowed_traceback": False,
+}
+
+if ONEDIR:
+    exe = EXE(pyz, a.scripts, [], exclude_binaries=True, **exe_options)  # noqa: F821
+    coll = COLLECT(exe, a.binaries, a.datas, name="PhoneDeck", upx=False)  # noqa: F821
+else:
+    exe = EXE(pyz, a.scripts, a.binaries, a.datas, [], **exe_options)  # noqa: F821

@@ -16,3 +16,8 @@ end_of_line = crlf
 
 [*.md]
 trim_trailing_whitespace = false
+
+[*.ps1]
+end_of_line = crlf
+# PowerShell 5.1 lee los .ps1 sin BOM como ANSI y rompe las tildes
+charset = utf-8-bom

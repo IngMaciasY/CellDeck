@@ -7,14 +7,18 @@ rem  2. Instala dependencias EXACTAS (version + hash SHA-256) de requirements\bu
 rem  3. Audita vulnerabilidades conocidas (pip-audit), si esta disponible
 rem  4. Compila con PyInstaller y calcula el SHA-256 del .exe
 rem
+rem  Despues: scripts\package_release.ps1 genera la carpeta release\ (exe, zip, SHA-256).
+rem
 rem  Nota: este archivo debe ser ASCII con finales de linea CRLF (cmd.exe).
 rem ---------------------------------------------------------------------------
 setlocal
 cd /d "%~dp0.."
 
 set "PY="
-where py >nul 2>nul
-if not errorlevel 1 (
+rem PHONEDECK_PYTHON: ruta a python.exe 3.13 (la usa GitHub Actions, que no siempre tiene "py")
+if defined PHONEDECK_PYTHON set "PY="%PHONEDECK_PYTHON%""
+if not defined PY where py >nul 2>nul
+if not defined PY if not errorlevel 1 (
     py -3.13 -c "pass" >nul 2>nul
     if not errorlevel 1 set "PY=py -3.13"
 )

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "phonedeck"
-version = "0.1.0"
+dynamic = ["version"]  # se lee de src/phonedeck/__init__.py (única fuente)
 description = "Dashboard personalizable para controlar una PC Windows desde un celular Android antiguo."
 readme = "README.md"
 license = "MIT"
@@ -52,6 +52,9 @@ phonedeck = "phonedeck.__main__:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.dynamic]
+version = { attr = "phonedeck.__version__" }
 
 [tool.setuptools.package-data]
 phonedeck = ["config/default_config.json"]
