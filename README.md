@@ -131,11 +131,16 @@ Guía completa, con trucos para Xiaomi y otra opción sin adb: [docs/usb.md](doc
 
 Usa el modo WiFi solo en redes de confianza (tu casa), no en redes públicas.
 
+> **iPhone y iPad:** probado en un iPhone real por WiFi y funciona. Por cable todavía no se ha
+> probado: el método USB de arriba (`adb`) es solo para Android, y iOS no tiene un equivalente.
+
 ### Consejos
 
 - **Pantalla completa:** ⚙️ → **Pantalla completa**, o en Chrome ⋮ → **Añadir a pantalla de
-  inicio** para abrirlo como una app.
-- **La pantalla no se apaga** mientras CellDeck está abierto.
+  inicio** para abrirlo como una app. En iPhone y iPad no hay pantalla completa para páginas
+  web: en Safari toca **Compartir → Agregar a inicio** y ábrelo desde ese icono.
+- **La pantalla no se apaga** mientras CellDeck está abierto. Si en tu iPhone se apaga, pon
+  **Ajustes → Pantalla y brillo → Bloqueo automático → Nunca**.
 - **Desliza a izquierda o derecha** para cambiar de página.
 
 ---

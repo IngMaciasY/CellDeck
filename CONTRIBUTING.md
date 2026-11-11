@@ -74,8 +74,8 @@ bun run lint
 
 Algunas reglas del proyecto:
 
-- **El frontend debe funcionar en Chrome 60** (celulares Android viejos). `bun run lint` lo
-  comprueba. No uses sintaxis ni APIs más nuevas sin un respaldo.
+- **El frontend debe funcionar en Chrome 60** (celulares Android viejos) **y en Safari de iOS 15**
+  (iPhone y iPad). `bun run lint` lo comprueba. No uses sintaxis ni APIs más nuevas sin un respaldo.
 - **No añadas dependencias sin auditarlas.** En Python, ejecuta `pip-audit`. En JavaScript,
   `bun install --lockfile-only`, después `bun audit` y luego `bun install --frozen-lockfile`.
   Si cambias las dependencias del ejecutable, regenera `requirements/build.lock` con

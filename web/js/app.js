@@ -374,7 +374,18 @@
     }
   }
 
+  /** 'iPhone', 'iPad' o 'iPod' en iOS/iPadOS; null en lo demás. */
+  function appleDevice() {
+    const m = /iPhone|iPad|iPod/.exec(navigator.userAgent);
+    if (m) return m[0];
+    // El iPad se presenta como Mac de escritorio: se distingue por la pantalla táctil.
+    return /Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1 ? 'iPad' : null;
+  }
+
   function deviceName() {
+    // iPhone/iPad no ponen el modelo en el User-Agent ("CPU iPhone OS 18_7 like Mac OS X").
+    const apple = appleDevice();
+    if (apple) return apple;
     const m = /\(([^)]+)\)/.exec(navigator.userAgent);
     const parts = m ? m[1].split(';') : [];
     return (parts.length ? parts[parts.length - 1] : 'celular').replace(/Build.*/, '').trim().slice(0, 60) || 'celular';
@@ -574,6 +585,9 @@
     $('opt-haptics').checked = u.store.get('haptics', true);
     $('opt-nosleep').checked = u.store.get('nosleep', true);
     $('opt-autofs').checked = u.store.get('autofs', false);
+    // iPhone no vibra ni tiene pantalla completa para webs: no se ofrecen opciones que no hacen nada.
+    u.show($('opt-haptics').closest('.row'), 'vibrate' in navigator);
+    u.show($('opt-autofs').closest('.row'), fullscreenSupported());
     $('opt-theme').value = u.store.get('theme', '');
     $('opt-size').value = String(u.store.get('btnsize', ''));
     updateColsInfo();
@@ -602,9 +616,11 @@
       return;
     }
     const method = PD.nosleep.method();
+    const fallback = appleDevice()
+      ? 'en el ' + appleDevice() + ' ve a Ajustes → Pantalla y brillo → Bloqueo automático → Nunca.'
+      : 'activa "Pantalla activa" en Opciones de desarrollador mientras carga.';
     hint.textContent = method === 'wakelock' ? 'Pantalla encendida (Wake Lock).'
-      : method === 'video' ? 'Pantalla encendida (modo compatible). Si aun así se apaga, activa ' +
-        '"Pantalla activa" en Opciones de desarrollador mientras carga.'
+      : method === 'video' ? 'Pantalla encendida (modo compatible). Si aun así se apaga, ' + fallback
       : 'Toca cualquier botón para activar el modo pantalla encendida.';
   }
 
