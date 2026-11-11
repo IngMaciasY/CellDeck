@@ -63,8 +63,9 @@ the first time. Click **More info** and then **Run anyway**. To check the file, 
   `http://localhost:8765` on the phone. See [docs/usb.md](docs/usb.md).
 - **WiFi (any phone):** both devices must be on the same network. Use tray icon →
   **Modo WiFi**, then **Mostrar QR / PIN**. Scan the QR code and enter the 6-digit PIN.
-  This is the only option on iPhone and iPad. To open it like an app without Safari's bars,
-  tap **Share → Add to Home Screen**.
+  On iPhone and iPad, WiFi has been tested on a real iPhone and works; a cable connection has
+  not been tested yet. To open it like an app without Safari's bars, tap
+  **Share → Add to Home Screen**.
 
 ## Optional integrations
 

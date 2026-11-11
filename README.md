@@ -131,6 +131,9 @@ Guía completa, con trucos para Xiaomi y otra opción sin adb: [docs/usb.md](doc
 
 Usa el modo WiFi solo en redes de confianza (tu casa), no en redes públicas.
 
+> **iPhone y iPad:** probado en un iPhone real por WiFi y funciona. Por cable todavía no se ha
+> probado: el método USB de arriba (`adb`) es solo para Android, y iOS no tiene un equivalente.
+
 ### Consejos
 
 - **Pantalla completa:** ⚙️ → **Pantalla completa**, o en Chrome ⋮ → **Añadir a pantalla de
