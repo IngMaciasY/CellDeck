@@ -134,8 +134,10 @@ Usa el modo WiFi solo en redes de confianza (tu casa), no en redes públicas.
 ### Consejos
 
 - **Pantalla completa:** ⚙️ → **Pantalla completa**, o en Chrome ⋮ → **Añadir a pantalla de
-  inicio** para abrirlo como una app.
-- **La pantalla no se apaga** mientras CellDeck está abierto.
+  inicio** para abrirlo como una app. En iPhone y iPad no hay pantalla completa para páginas
+  web: en Safari toca **Compartir → Agregar a inicio** y ábrelo desde ese icono.
+- **La pantalla no se apaga** mientras CellDeck está abierto. Si en tu iPhone se apaga, pon
+  **Ajustes → Pantalla y brillo → Bloqueo automático → Nunca**.
 - **Desliza a izquierda o derecha** para cambiar de página.
 
 ---
