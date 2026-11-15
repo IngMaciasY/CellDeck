@@ -1,6 +1,7 @@
-// ESLint para web/: garantiza compatibilidad con Chrome 60 (Xiaomi Redmi 5 Plus, Android 7/8).
+// ESLint para web/: garantiza compatibilidad con Chrome 60 (Xiaomi Redmi 5 Plus, Android 7/8)
+// y con Safari de iOS 15 (iPhone y iPad).
 // - ecmaVersion 2017: rechaza ?. ?? spread de objetos, etc.
-// - eslint-plugin-compat: avisa de APIs que no existen en Chrome 60 (según browserslist).
+// - eslint-plugin-compat: avisa de APIs que no existen en esos navegadores (según browserslist).
 import js from "@eslint/js";
 import compat from "eslint-plugin-compat";
 import globals from "globals";

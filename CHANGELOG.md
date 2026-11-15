@@ -6,6 +6,14 @@ Todos los cambios visibles de CellDeck se anotan aquí. El formato sigue
 
 ## [Sin publicar]
 
+### Cambiado
+
+- iPhone y iPad: el menú ya no ofrece "Vibrar al pulsar" ni "Pantalla completa al tocar", que
+  iOS no admite, y el consejo para que no se apague la pantalla indica el ajuste de iOS.
+- Los iPhone y iPad se emparejan con el nombre "iPhone" o "iPad" en lugar de un texto como
+  "CPU iPhone OS 18_7 like Mac OS X".
+- `bun run lint` también comprueba la compatibilidad con Safari de iOS 15.
+
 ## [0.1.0] - 2026-11-09
 
 Primera versión pública. Durante el desarrollo el proyecto se llamó **PhoneDeck**: al abrir
