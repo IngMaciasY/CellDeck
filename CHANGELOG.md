@@ -6,6 +6,8 @@ Todos los cambios visibles de CellDeck se anotan aquí. El formato sigue
 
 ## [Sin publicar]
 
+## [0.1.1] - 2026-11-15
+
 ### Cambiado
 
 - iPhone y iPad: el menú ya no ofrece "Vibrar al pulsar" ni "Pantalla completa al tocar", que
@@ -39,5 +41,6 @@ emparejado y el inicio con Windows pasa a CellDeck.
 - Releases automáticas en GitHub: `CellDeck.exe`, `CellDeck-win64.zip`, SHA-256 y atestación
   de compilación.
 
-[Sin publicar]: ../../compare/v0.1.0...HEAD
+[Sin publicar]: ../../compare/v0.1.1...HEAD
+[0.1.1]: ../../compare/v0.1.0...v0.1.1
 [0.1.0]: ../../releases/tag/v0.1.0
